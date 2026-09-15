@@ -527,6 +527,7 @@ pub use crate::rules::typescript::consistent_type_assertions::ConsistentTypeAsse
 pub use crate::rules::typescript::consistent_type_definitions::ConsistentTypeDefinitions as TypescriptConsistentTypeDefinitions;
 pub use crate::rules::typescript::consistent_type_exports::ConsistentTypeExports as TypescriptConsistentTypeExports;
 pub use crate::rules::typescript::consistent_type_imports::ConsistentTypeImports as TypescriptConsistentTypeImports;
+pub use crate::rules::typescript::define_messages_keys::DefineMessagesKeys as TypescriptDefineMessagesKeys;
 pub use crate::rules::typescript::dot_notation::DotNotation as TypescriptDotNotation;
 pub use crate::rules::typescript::explicit_function_return_type::ExplicitFunctionReturnType as TypescriptExplicitFunctionReturnType;
 pub use crate::rules::typescript::explicit_member_accessibility::ExplicitMemberAccessibility as TypescriptExplicitMemberAccessibility;
@@ -587,6 +588,9 @@ pub use crate::rules::typescript::no_unsafe_unary_minus::NoUnsafeUnaryMinus as T
 pub use crate::rules::typescript::no_useless_default_assignment::NoUselessDefaultAssignment as TypescriptNoUselessDefaultAssignment;
 pub use crate::rules::typescript::no_useless_empty_export::NoUselessEmptyExport as TypescriptNoUselessEmptyExport;
 pub use crate::rules::typescript::no_var_requires::NoVarRequires as TypescriptNoVarRequires;
+pub use crate::rules::typescript::no_widening_alias::NoWideningAlias as TypescriptNoWideningAlias;
+pub use crate::rules::typescript::no_widening_object_keys::NoWideningObjectKeys as TypescriptNoWideningObjectKeys;
+pub use crate::rules::typescript::no_widening_return_type::NoWideningReturnType as TypescriptNoWideningReturnType;
 pub use crate::rules::typescript::no_wrapper_object_types::NoWrapperObjectTypes as TypescriptNoWrapperObjectTypes;
 pub use crate::rules::typescript::non_nullable_type_assertion_style::NonNullableTypeAssertionStyle as TypescriptNonNullableTypeAssertionStyle;
 pub use crate::rules::typescript::only_throw_error::OnlyThrowError as TypescriptOnlyThrowError;
@@ -1124,6 +1128,7 @@ pub enum RuleEnum {
     TypescriptConsistentTypeDefinitions(TypescriptConsistentTypeDefinitions),
     TypescriptConsistentTypeExports(TypescriptConsistentTypeExports),
     TypescriptConsistentTypeImports(TypescriptConsistentTypeImports),
+    TypescriptDefineMessagesKeys(TypescriptDefineMessagesKeys),
     TypescriptDotNotation(TypescriptDotNotation),
     TypescriptExplicitFunctionReturnType(TypescriptExplicitFunctionReturnType),
     TypescriptExplicitMemberAccessibility(TypescriptExplicitMemberAccessibility),
@@ -1186,6 +1191,9 @@ pub enum RuleEnum {
     TypescriptNoUselessDefaultAssignment(TypescriptNoUselessDefaultAssignment),
     TypescriptNoUselessEmptyExport(TypescriptNoUselessEmptyExport),
     TypescriptNoVarRequires(TypescriptNoVarRequires),
+    TypescriptNoWideningAlias(TypescriptNoWideningAlias),
+    TypescriptNoWideningObjectKeys(TypescriptNoWideningObjectKeys),
+    TypescriptNoWideningReturnType(TypescriptNoWideningReturnType),
     TypescriptNoWrapperObjectTypes(TypescriptNoWrapperObjectTypes),
     TypescriptNonNullableTypeAssertionStyle(TypescriptNonNullableTypeAssertionStyle),
     TypescriptOnlyThrowError(TypescriptOnlyThrowError),
@@ -2009,7 +2017,8 @@ const TYPESCRIPT_CONSISTENT_TYPE_DEFINITIONS_ID: usize =
 const TYPESCRIPT_CONSISTENT_TYPE_EXPORTS_ID: usize =
     TYPESCRIPT_CONSISTENT_TYPE_DEFINITIONS_ID + 1usize;
 const TYPESCRIPT_CONSISTENT_TYPE_IMPORTS_ID: usize = TYPESCRIPT_CONSISTENT_TYPE_EXPORTS_ID + 1usize;
-const TYPESCRIPT_DOT_NOTATION_ID: usize = TYPESCRIPT_CONSISTENT_TYPE_IMPORTS_ID + 1usize;
+const TYPESCRIPT_DEFINE_MESSAGES_KEYS_ID: usize = TYPESCRIPT_CONSISTENT_TYPE_IMPORTS_ID + 1usize;
+const TYPESCRIPT_DOT_NOTATION_ID: usize = TYPESCRIPT_DEFINE_MESSAGES_KEYS_ID + 1usize;
 const TYPESCRIPT_EXPLICIT_FUNCTION_RETURN_TYPE_ID: usize = TYPESCRIPT_DOT_NOTATION_ID + 1usize;
 const TYPESCRIPT_EXPLICIT_MEMBER_ACCESSIBILITY_ID: usize =
     TYPESCRIPT_EXPLICIT_FUNCTION_RETURN_TYPE_ID + 1usize;
@@ -2097,7 +2106,10 @@ const TYPESCRIPT_NO_USELESS_DEFAULT_ASSIGNMENT_ID: usize =
 const TYPESCRIPT_NO_USELESS_EMPTY_EXPORT_ID: usize =
     TYPESCRIPT_NO_USELESS_DEFAULT_ASSIGNMENT_ID + 1usize;
 const TYPESCRIPT_NO_VAR_REQUIRES_ID: usize = TYPESCRIPT_NO_USELESS_EMPTY_EXPORT_ID + 1usize;
-const TYPESCRIPT_NO_WRAPPER_OBJECT_TYPES_ID: usize = TYPESCRIPT_NO_VAR_REQUIRES_ID + 1usize;
+const TYPESCRIPT_NO_WIDENING_ALIAS_ID: usize = TYPESCRIPT_NO_VAR_REQUIRES_ID + 1usize;
+const TYPESCRIPT_NO_WIDENING_OBJECT_KEYS_ID: usize = TYPESCRIPT_NO_WIDENING_ALIAS_ID + 1usize;
+const TYPESCRIPT_NO_WIDENING_RETURN_TYPE_ID: usize = TYPESCRIPT_NO_WIDENING_OBJECT_KEYS_ID + 1usize;
+const TYPESCRIPT_NO_WRAPPER_OBJECT_TYPES_ID: usize = TYPESCRIPT_NO_WIDENING_RETURN_TYPE_ID + 1usize;
 const TYPESCRIPT_NON_NULLABLE_TYPE_ASSERTION_STYLE_ID: usize =
     TYPESCRIPT_NO_WRAPPER_OBJECT_TYPES_ID + 1usize;
 const TYPESCRIPT_ONLY_THROW_ERROR_ID: usize =
@@ -2748,7 +2760,7 @@ const VUE_VALID_DEFINE_EMITS_ID: usize = VUE_RETURN_IN_EMITS_VALIDATOR_ID + 1usi
 const VUE_VALID_DEFINE_OPTIONS_ID: usize = VUE_VALID_DEFINE_EMITS_ID + 1usize;
 const VUE_VALID_DEFINE_PROPS_ID: usize = VUE_VALID_DEFINE_OPTIONS_ID + 1usize;
 const VUE_VALID_NEXT_TICK_ID: usize = VUE_VALID_DEFINE_PROPS_ID + 1usize;
-static RULE_NAMES: [&str; 870usize] = [
+static RULE_NAMES: [&str; 874usize] = [
     ImportConsistentTypeSpecifierStyle::NAME,
     ImportDefault::NAME,
     ImportExport::NAME,
@@ -2983,6 +2995,7 @@ static RULE_NAMES: [&str; 870usize] = [
     TypescriptConsistentTypeDefinitions::NAME,
     TypescriptConsistentTypeExports::NAME,
     TypescriptConsistentTypeImports::NAME,
+    TypescriptDefineMessagesKeys::NAME,
     TypescriptDotNotation::NAME,
     TypescriptExplicitFunctionReturnType::NAME,
     TypescriptExplicitMemberAccessibility::NAME,
@@ -3043,6 +3056,9 @@ static RULE_NAMES: [&str; 870usize] = [
     TypescriptNoUselessDefaultAssignment::NAME,
     TypescriptNoUselessEmptyExport::NAME,
     TypescriptNoVarRequires::NAME,
+    TypescriptNoWideningAlias::NAME,
+    TypescriptNoWideningObjectKeys::NAME,
+    TypescriptNoWideningReturnType::NAME,
     TypescriptNoWrapperObjectTypes::NAME,
     TypescriptNonNullableTypeAssertionStyle::NAME,
     TypescriptOnlyThrowError::NAME,
@@ -3869,6 +3885,7 @@ impl RuleEnum {
             }
             Self::TypescriptConsistentTypeExports(_) => TYPESCRIPT_CONSISTENT_TYPE_EXPORTS_ID,
             Self::TypescriptConsistentTypeImports(_) => TYPESCRIPT_CONSISTENT_TYPE_IMPORTS_ID,
+            Self::TypescriptDefineMessagesKeys(_) => TYPESCRIPT_DEFINE_MESSAGES_KEYS_ID,
             Self::TypescriptDotNotation(_) => TYPESCRIPT_DOT_NOTATION_ID,
             Self::TypescriptExplicitFunctionReturnType(_) => {
                 TYPESCRIPT_EXPLICIT_FUNCTION_RETURN_TYPE_ID
@@ -3969,6 +3986,9 @@ impl RuleEnum {
             }
             Self::TypescriptNoUselessEmptyExport(_) => TYPESCRIPT_NO_USELESS_EMPTY_EXPORT_ID,
             Self::TypescriptNoVarRequires(_) => TYPESCRIPT_NO_VAR_REQUIRES_ID,
+            Self::TypescriptNoWideningAlias(_) => TYPESCRIPT_NO_WIDENING_ALIAS_ID,
+            Self::TypescriptNoWideningObjectKeys(_) => TYPESCRIPT_NO_WIDENING_OBJECT_KEYS_ID,
+            Self::TypescriptNoWideningReturnType(_) => TYPESCRIPT_NO_WIDENING_RETURN_TYPE_ID,
             Self::TypescriptNoWrapperObjectTypes(_) => TYPESCRIPT_NO_WRAPPER_OBJECT_TYPES_ID,
             Self::TypescriptNonNullableTypeAssertionStyle(_) => {
                 TYPESCRIPT_NON_NULLABLE_TYPE_ASSERTION_STYLE_ID
@@ -4882,6 +4902,7 @@ impl RuleEnum {
             }
             Self::TypescriptConsistentTypeExports(_) => TypescriptConsistentTypeExports::CATEGORY,
             Self::TypescriptConsistentTypeImports(_) => TypescriptConsistentTypeImports::CATEGORY,
+            Self::TypescriptDefineMessagesKeys(_) => TypescriptDefineMessagesKeys::CATEGORY,
             Self::TypescriptDotNotation(_) => TypescriptDotNotation::CATEGORY,
             Self::TypescriptExplicitFunctionReturnType(_) => {
                 TypescriptExplicitFunctionReturnType::CATEGORY
@@ -4986,6 +5007,9 @@ impl RuleEnum {
             }
             Self::TypescriptNoUselessEmptyExport(_) => TypescriptNoUselessEmptyExport::CATEGORY,
             Self::TypescriptNoVarRequires(_) => TypescriptNoVarRequires::CATEGORY,
+            Self::TypescriptNoWideningAlias(_) => TypescriptNoWideningAlias::CATEGORY,
+            Self::TypescriptNoWideningObjectKeys(_) => TypescriptNoWideningObjectKeys::CATEGORY,
+            Self::TypescriptNoWideningReturnType(_) => TypescriptNoWideningReturnType::CATEGORY,
             Self::TypescriptNoWrapperObjectTypes(_) => TypescriptNoWrapperObjectTypes::CATEGORY,
             Self::TypescriptNonNullableTypeAssertionStyle(_) => {
                 TypescriptNonNullableTypeAssertionStyle::CATEGORY
@@ -5923,6 +5947,7 @@ impl RuleEnum {
             }
             Self::TypescriptConsistentTypeExports(_) => TypescriptConsistentTypeExports::FIX,
             Self::TypescriptConsistentTypeImports(_) => TypescriptConsistentTypeImports::FIX,
+            Self::TypescriptDefineMessagesKeys(_) => TypescriptDefineMessagesKeys::FIX,
             Self::TypescriptDotNotation(_) => TypescriptDotNotation::FIX,
             Self::TypescriptExplicitFunctionReturnType(_) => {
                 TypescriptExplicitFunctionReturnType::FIX
@@ -6023,6 +6048,9 @@ impl RuleEnum {
             }
             Self::TypescriptNoUselessEmptyExport(_) => TypescriptNoUselessEmptyExport::FIX,
             Self::TypescriptNoVarRequires(_) => TypescriptNoVarRequires::FIX,
+            Self::TypescriptNoWideningAlias(_) => TypescriptNoWideningAlias::FIX,
+            Self::TypescriptNoWideningObjectKeys(_) => TypescriptNoWideningObjectKeys::FIX,
+            Self::TypescriptNoWideningReturnType(_) => TypescriptNoWideningReturnType::FIX,
             Self::TypescriptNoWrapperObjectTypes(_) => TypescriptNoWrapperObjectTypes::FIX,
             Self::TypescriptNonNullableTypeAssertionStyle(_) => {
                 TypescriptNonNullableTypeAssertionStyle::FIX
@@ -6952,6 +6980,7 @@ impl RuleEnum {
             Self::TypescriptConsistentTypeImports(_) => {
                 TypescriptConsistentTypeImports::documentation()
             }
+            Self::TypescriptDefineMessagesKeys(_) => TypescriptDefineMessagesKeys::documentation(),
             Self::TypescriptDotNotation(_) => TypescriptDotNotation::documentation(),
             Self::TypescriptExplicitFunctionReturnType(_) => {
                 TypescriptExplicitFunctionReturnType::documentation()
@@ -7074,6 +7103,13 @@ impl RuleEnum {
                 TypescriptNoUselessEmptyExport::documentation()
             }
             Self::TypescriptNoVarRequires(_) => TypescriptNoVarRequires::documentation(),
+            Self::TypescriptNoWideningAlias(_) => TypescriptNoWideningAlias::documentation(),
+            Self::TypescriptNoWideningObjectKeys(_) => {
+                TypescriptNoWideningObjectKeys::documentation()
+            }
+            Self::TypescriptNoWideningReturnType(_) => {
+                TypescriptNoWideningReturnType::documentation()
+            }
             Self::TypescriptNoWrapperObjectTypes(_) => {
                 TypescriptNoWrapperObjectTypes::documentation()
             }
@@ -8542,6 +8578,10 @@ impl RuleEnum {
                 TypescriptConsistentTypeImports::config_schema(generator)
                     .or_else(|| TypescriptConsistentTypeImports::schema(generator))
             }
+            Self::TypescriptDefineMessagesKeys(_) => {
+                TypescriptDefineMessagesKeys::config_schema(generator)
+                    .or_else(|| TypescriptDefineMessagesKeys::schema(generator))
+            }
             Self::TypescriptDotNotation(_) => TypescriptDotNotation::config_schema(generator)
                 .or_else(|| TypescriptDotNotation::schema(generator)),
             Self::TypescriptExplicitFunctionReturnType(_) => {
@@ -8756,6 +8796,18 @@ impl RuleEnum {
             }
             Self::TypescriptNoVarRequires(_) => TypescriptNoVarRequires::config_schema(generator)
                 .or_else(|| TypescriptNoVarRequires::schema(generator)),
+            Self::TypescriptNoWideningAlias(_) => {
+                TypescriptNoWideningAlias::config_schema(generator)
+                    .or_else(|| TypescriptNoWideningAlias::schema(generator))
+            }
+            Self::TypescriptNoWideningObjectKeys(_) => {
+                TypescriptNoWideningObjectKeys::config_schema(generator)
+                    .or_else(|| TypescriptNoWideningObjectKeys::schema(generator))
+            }
+            Self::TypescriptNoWideningReturnType(_) => {
+                TypescriptNoWideningReturnType::config_schema(generator)
+                    .or_else(|| TypescriptNoWideningReturnType::schema(generator))
+            }
             Self::TypescriptNoWrapperObjectTypes(_) => {
                 TypescriptNoWrapperObjectTypes::config_schema(generator)
                     .or_else(|| TypescriptNoWrapperObjectTypes::schema(generator))
@@ -10663,6 +10715,7 @@ impl RuleEnum {
             Self::TypescriptConsistentTypeDefinitions(_) => "typescript",
             Self::TypescriptConsistentTypeExports(_) => "typescript",
             Self::TypescriptConsistentTypeImports(_) => "typescript",
+            Self::TypescriptDefineMessagesKeys(_) => "typescript",
             Self::TypescriptDotNotation(_) => "typescript",
             Self::TypescriptExplicitFunctionReturnType(_) => "typescript",
             Self::TypescriptExplicitMemberAccessibility(_) => "typescript",
@@ -10723,6 +10776,9 @@ impl RuleEnum {
             Self::TypescriptNoUselessDefaultAssignment(_) => "typescript",
             Self::TypescriptNoUselessEmptyExport(_) => "typescript",
             Self::TypescriptNoVarRequires(_) => "typescript",
+            Self::TypescriptNoWideningAlias(_) => "typescript",
+            Self::TypescriptNoWideningObjectKeys(_) => "typescript",
+            Self::TypescriptNoWideningReturnType(_) => "typescript",
             Self::TypescriptNoWrapperObjectTypes(_) => "typescript",
             Self::TypescriptNonNullableTypeAssertionStyle(_) => "typescript",
             Self::TypescriptOnlyThrowError(_) => "typescript",
@@ -11786,6 +11842,12 @@ impl RuleEnum {
             Self::TypescriptNoUnsafeMemberAccess(_) => Ok(Self::TypescriptNoUnsafeMemberAccess(
                 TypescriptNoUnsafeMemberAccess::from_configuration(value)?,
             )),
+            Self::TypescriptNoWideningObjectKeys(_) => Ok(Self::TypescriptNoWideningObjectKeys(
+                TypescriptNoWideningObjectKeys::from_configuration(value)?,
+            )),
+            Self::TypescriptNoWideningReturnType(_) => Ok(Self::TypescriptNoWideningReturnType(
+                TypescriptNoWideningReturnType::from_configuration(value)?,
+            )),
             Self::TypescriptOnlyThrowError(_) => Ok(Self::TypescriptOnlyThrowError(
                 TypescriptOnlyThrowError::from_configuration(value)?,
             )),
@@ -12415,6 +12477,8 @@ impl RuleEnum {
             Self::TypescriptNoUnnecessaryCondition(rule) => rule.to_configuration(),
             Self::TypescriptNoUnnecessaryTypeAssertion(rule) => rule.to_configuration(),
             Self::TypescriptNoUnsafeMemberAccess(rule) => rule.to_configuration(),
+            Self::TypescriptNoWideningObjectKeys(rule) => rule.to_configuration(),
+            Self::TypescriptNoWideningReturnType(rule) => rule.to_configuration(),
             Self::TypescriptOnlyThrowError(rule) => rule.to_configuration(),
             Self::TypescriptPreferNullishCoalescing(rule) => rule.to_configuration(),
             Self::TypescriptPreferOptionalChain(rule) => rule.to_configuration(),
@@ -12671,6 +12735,7 @@ impl RuleEnum {
             Self::TypescriptConsistentTypeDefinitions(rule) => rule.run(node, ctx),
             Self::TypescriptConsistentTypeExports(rule) => rule.run(node, ctx),
             Self::TypescriptConsistentTypeImports(rule) => rule.run(node, ctx),
+            Self::TypescriptDefineMessagesKeys(rule) => rule.run(node, ctx),
             Self::TypescriptDotNotation(rule) => rule.run(node, ctx),
             Self::TypescriptExplicitFunctionReturnType(rule) => rule.run(node, ctx),
             Self::TypescriptExplicitMemberAccessibility(rule) => rule.run(node, ctx),
@@ -12731,6 +12796,9 @@ impl RuleEnum {
             Self::TypescriptNoUselessDefaultAssignment(rule) => rule.run(node, ctx),
             Self::TypescriptNoUselessEmptyExport(rule) => rule.run(node, ctx),
             Self::TypescriptNoVarRequires(rule) => rule.run(node, ctx),
+            Self::TypescriptNoWideningAlias(rule) => rule.run(node, ctx),
+            Self::TypescriptNoWideningObjectKeys(rule) => rule.run(node, ctx),
+            Self::TypescriptNoWideningReturnType(rule) => rule.run(node, ctx),
             Self::TypescriptNoWrapperObjectTypes(rule) => rule.run(node, ctx),
             Self::TypescriptNonNullableTypeAssertionStyle(rule) => rule.run(node, ctx),
             Self::TypescriptOnlyThrowError(rule) => rule.run(node, ctx),
@@ -13558,6 +13626,7 @@ impl RuleEnum {
             Self::TypescriptConsistentTypeDefinitions(rule) => rule.run_once(ctx),
             Self::TypescriptConsistentTypeExports(rule) => rule.run_once(ctx),
             Self::TypescriptConsistentTypeImports(rule) => rule.run_once(ctx),
+            Self::TypescriptDefineMessagesKeys(rule) => rule.run_once(ctx),
             Self::TypescriptDotNotation(rule) => rule.run_once(ctx),
             Self::TypescriptExplicitFunctionReturnType(rule) => rule.run_once(ctx),
             Self::TypescriptExplicitMemberAccessibility(rule) => rule.run_once(ctx),
@@ -13618,6 +13687,9 @@ impl RuleEnum {
             Self::TypescriptNoUselessDefaultAssignment(rule) => rule.run_once(ctx),
             Self::TypescriptNoUselessEmptyExport(rule) => rule.run_once(ctx),
             Self::TypescriptNoVarRequires(rule) => rule.run_once(ctx),
+            Self::TypescriptNoWideningAlias(rule) => rule.run_once(ctx),
+            Self::TypescriptNoWideningObjectKeys(rule) => rule.run_once(ctx),
+            Self::TypescriptNoWideningReturnType(rule) => rule.run_once(ctx),
             Self::TypescriptNoWrapperObjectTypes(rule) => rule.run_once(ctx),
             Self::TypescriptNonNullableTypeAssertionStyle(rule) => rule.run_once(ctx),
             Self::TypescriptOnlyThrowError(rule) => rule.run_once(ctx),
@@ -14458,6 +14530,7 @@ impl RuleEnum {
             }
             Self::TypescriptConsistentTypeExports(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::TypescriptConsistentTypeImports(rule) => rule.run_on_jest_node(jest_node, ctx),
+            Self::TypescriptDefineMessagesKeys(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::TypescriptDotNotation(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::TypescriptExplicitFunctionReturnType(rule) => {
                 rule.run_on_jest_node(jest_node, ctx)
@@ -14558,6 +14631,9 @@ impl RuleEnum {
             }
             Self::TypescriptNoUselessEmptyExport(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::TypescriptNoVarRequires(rule) => rule.run_on_jest_node(jest_node, ctx),
+            Self::TypescriptNoWideningAlias(rule) => rule.run_on_jest_node(jest_node, ctx),
+            Self::TypescriptNoWideningObjectKeys(rule) => rule.run_on_jest_node(jest_node, ctx),
+            Self::TypescriptNoWideningReturnType(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::TypescriptNoWrapperObjectTypes(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::TypescriptNonNullableTypeAssertionStyle(rule) => {
                 rule.run_on_jest_node(jest_node, ctx)
@@ -15450,6 +15526,7 @@ impl RuleEnum {
             Self::TypescriptConsistentTypeDefinitions(rule) => rule.should_run(ctx),
             Self::TypescriptConsistentTypeExports(rule) => rule.should_run(ctx),
             Self::TypescriptConsistentTypeImports(rule) => rule.should_run(ctx),
+            Self::TypescriptDefineMessagesKeys(rule) => rule.should_run(ctx),
             Self::TypescriptDotNotation(rule) => rule.should_run(ctx),
             Self::TypescriptExplicitFunctionReturnType(rule) => rule.should_run(ctx),
             Self::TypescriptExplicitMemberAccessibility(rule) => rule.should_run(ctx),
@@ -15510,6 +15587,9 @@ impl RuleEnum {
             Self::TypescriptNoUselessDefaultAssignment(rule) => rule.should_run(ctx),
             Self::TypescriptNoUselessEmptyExport(rule) => rule.should_run(ctx),
             Self::TypescriptNoVarRequires(rule) => rule.should_run(ctx),
+            Self::TypescriptNoWideningAlias(rule) => rule.should_run(ctx),
+            Self::TypescriptNoWideningObjectKeys(rule) => rule.should_run(ctx),
+            Self::TypescriptNoWideningReturnType(rule) => rule.should_run(ctx),
             Self::TypescriptNoWrapperObjectTypes(rule) => rule.should_run(ctx),
             Self::TypescriptNonNullableTypeAssertionStyle(rule) => rule.should_run(ctx),
             Self::TypescriptOnlyThrowError(rule) => rule.should_run(ctx),
@@ -16374,6 +16454,7 @@ impl RuleEnum {
             Self::TypescriptConsistentTypeImports(_) => {
                 TypescriptConsistentTypeImports::IS_TSGOLINT_RULE
             }
+            Self::TypescriptDefineMessagesKeys(_) => TypescriptDefineMessagesKeys::IS_TSGOLINT_RULE,
             Self::TypescriptDotNotation(_) => TypescriptDotNotation::IS_TSGOLINT_RULE,
             Self::TypescriptExplicitFunctionReturnType(_) => {
                 TypescriptExplicitFunctionReturnType::IS_TSGOLINT_RULE
@@ -16496,6 +16577,13 @@ impl RuleEnum {
                 TypescriptNoUselessEmptyExport::IS_TSGOLINT_RULE
             }
             Self::TypescriptNoVarRequires(_) => TypescriptNoVarRequires::IS_TSGOLINT_RULE,
+            Self::TypescriptNoWideningAlias(_) => TypescriptNoWideningAlias::IS_TSGOLINT_RULE,
+            Self::TypescriptNoWideningObjectKeys(_) => {
+                TypescriptNoWideningObjectKeys::IS_TSGOLINT_RULE
+            }
+            Self::TypescriptNoWideningReturnType(_) => {
+                TypescriptNoWideningReturnType::IS_TSGOLINT_RULE
+            }
             Self::TypescriptNoWrapperObjectTypes(_) => {
                 TypescriptNoWrapperObjectTypes::IS_TSGOLINT_RULE
             }
@@ -17606,6 +17694,7 @@ impl RuleEnum {
             }
             Self::TypescriptConsistentTypeExports(_) => TypescriptConsistentTypeExports::VERSION,
             Self::TypescriptConsistentTypeImports(_) => TypescriptConsistentTypeImports::VERSION,
+            Self::TypescriptDefineMessagesKeys(_) => TypescriptDefineMessagesKeys::VERSION,
             Self::TypescriptDotNotation(_) => TypescriptDotNotation::VERSION,
             Self::TypescriptExplicitFunctionReturnType(_) => {
                 TypescriptExplicitFunctionReturnType::VERSION
@@ -17710,6 +17799,9 @@ impl RuleEnum {
             }
             Self::TypescriptNoUselessEmptyExport(_) => TypescriptNoUselessEmptyExport::VERSION,
             Self::TypescriptNoVarRequires(_) => TypescriptNoVarRequires::VERSION,
+            Self::TypescriptNoWideningAlias(_) => TypescriptNoWideningAlias::VERSION,
+            Self::TypescriptNoWideningObjectKeys(_) => TypescriptNoWideningObjectKeys::VERSION,
+            Self::TypescriptNoWideningReturnType(_) => TypescriptNoWideningReturnType::VERSION,
             Self::TypescriptNoWrapperObjectTypes(_) => TypescriptNoWrapperObjectTypes::VERSION,
             Self::TypescriptNonNullableTypeAssertionStyle(_) => {
                 TypescriptNonNullableTypeAssertionStyle::VERSION
@@ -18661,6 +18753,7 @@ impl RuleEnum {
             }
             Self::TypescriptConsistentTypeExports(_) => TypescriptConsistentTypeExports::HAS_CONFIG,
             Self::TypescriptConsistentTypeImports(_) => TypescriptConsistentTypeImports::HAS_CONFIG,
+            Self::TypescriptDefineMessagesKeys(_) => TypescriptDefineMessagesKeys::HAS_CONFIG,
             Self::TypescriptDotNotation(_) => TypescriptDotNotation::HAS_CONFIG,
             Self::TypescriptExplicitFunctionReturnType(_) => {
                 TypescriptExplicitFunctionReturnType::HAS_CONFIG
@@ -18771,6 +18864,9 @@ impl RuleEnum {
             }
             Self::TypescriptNoUselessEmptyExport(_) => TypescriptNoUselessEmptyExport::HAS_CONFIG,
             Self::TypescriptNoVarRequires(_) => TypescriptNoVarRequires::HAS_CONFIG,
+            Self::TypescriptNoWideningAlias(_) => TypescriptNoWideningAlias::HAS_CONFIG,
+            Self::TypescriptNoWideningObjectKeys(_) => TypescriptNoWideningObjectKeys::HAS_CONFIG,
+            Self::TypescriptNoWideningReturnType(_) => TypescriptNoWideningReturnType::HAS_CONFIG,
             Self::TypescriptNoWrapperObjectTypes(_) => TypescriptNoWrapperObjectTypes::HAS_CONFIG,
             Self::TypescriptNonNullableTypeAssertionStyle(_) => {
                 TypescriptNonNullableTypeAssertionStyle::HAS_CONFIG
@@ -19737,6 +19833,7 @@ impl RuleEnum {
             }
             Self::TypescriptConsistentTypeExports(_) => TypescriptConsistentTypeExports::INFO,
             Self::TypescriptConsistentTypeImports(_) => TypescriptConsistentTypeImports::INFO,
+            Self::TypescriptDefineMessagesKeys(_) => TypescriptDefineMessagesKeys::INFO,
             Self::TypescriptDotNotation(_) => TypescriptDotNotation::INFO,
             Self::TypescriptExplicitFunctionReturnType(_) => {
                 TypescriptExplicitFunctionReturnType::INFO
@@ -19837,6 +19934,9 @@ impl RuleEnum {
             }
             Self::TypescriptNoUselessEmptyExport(_) => TypescriptNoUselessEmptyExport::INFO,
             Self::TypescriptNoVarRequires(_) => TypescriptNoVarRequires::INFO,
+            Self::TypescriptNoWideningAlias(_) => TypescriptNoWideningAlias::INFO,
+            Self::TypescriptNoWideningObjectKeys(_) => TypescriptNoWideningObjectKeys::INFO,
+            Self::TypescriptNoWideningReturnType(_) => TypescriptNoWideningReturnType::INFO,
             Self::TypescriptNoWrapperObjectTypes(_) => TypescriptNoWrapperObjectTypes::INFO,
             Self::TypescriptNonNullableTypeAssertionStyle(_) => {
                 TypescriptNonNullableTypeAssertionStyle::INFO
@@ -20720,6 +20820,7 @@ impl RuleEnum {
             Self::TypescriptConsistentTypeDefinitions(rule) => rule.types_info(),
             Self::TypescriptConsistentTypeExports(rule) => rule.types_info(),
             Self::TypescriptConsistentTypeImports(rule) => rule.types_info(),
+            Self::TypescriptDefineMessagesKeys(rule) => rule.types_info(),
             Self::TypescriptDotNotation(rule) => rule.types_info(),
             Self::TypescriptExplicitFunctionReturnType(rule) => rule.types_info(),
             Self::TypescriptExplicitMemberAccessibility(rule) => rule.types_info(),
@@ -20780,6 +20881,9 @@ impl RuleEnum {
             Self::TypescriptNoUselessDefaultAssignment(rule) => rule.types_info(),
             Self::TypescriptNoUselessEmptyExport(rule) => rule.types_info(),
             Self::TypescriptNoVarRequires(rule) => rule.types_info(),
+            Self::TypescriptNoWideningAlias(rule) => rule.types_info(),
+            Self::TypescriptNoWideningObjectKeys(rule) => rule.types_info(),
+            Self::TypescriptNoWideningReturnType(rule) => rule.types_info(),
             Self::TypescriptNoWrapperObjectTypes(rule) => rule.types_info(),
             Self::TypescriptNonNullableTypeAssertionStyle(rule) => rule.types_info(),
             Self::TypescriptOnlyThrowError(rule) => rule.types_info(),
@@ -21594,6 +21698,7 @@ impl RuleEnum {
             Self::TypescriptConsistentTypeDefinitions(rule) => rule.run_info(),
             Self::TypescriptConsistentTypeExports(rule) => rule.run_info(),
             Self::TypescriptConsistentTypeImports(rule) => rule.run_info(),
+            Self::TypescriptDefineMessagesKeys(rule) => rule.run_info(),
             Self::TypescriptDotNotation(rule) => rule.run_info(),
             Self::TypescriptExplicitFunctionReturnType(rule) => rule.run_info(),
             Self::TypescriptExplicitMemberAccessibility(rule) => rule.run_info(),
@@ -21654,6 +21759,9 @@ impl RuleEnum {
             Self::TypescriptNoUselessDefaultAssignment(rule) => rule.run_info(),
             Self::TypescriptNoUselessEmptyExport(rule) => rule.run_info(),
             Self::TypescriptNoVarRequires(rule) => rule.run_info(),
+            Self::TypescriptNoWideningAlias(rule) => rule.run_info(),
+            Self::TypescriptNoWideningObjectKeys(rule) => rule.run_info(),
+            Self::TypescriptNoWideningReturnType(rule) => rule.run_info(),
             Self::TypescriptNoWrapperObjectTypes(rule) => rule.run_info(),
             Self::TypescriptNonNullableTypeAssertionStyle(rule) => rule.run_info(),
             Self::TypescriptOnlyThrowError(rule) => rule.run_info(),
@@ -22500,6 +22608,7 @@ pub static RULES: std::sync::LazyLock<Vec<RuleEnum>> = std::sync::LazyLock::new(
         ),
         RuleEnum::TypescriptConsistentTypeExports(TypescriptConsistentTypeExports::default()),
         RuleEnum::TypescriptConsistentTypeImports(TypescriptConsistentTypeImports::default()),
+        RuleEnum::TypescriptDefineMessagesKeys(TypescriptDefineMessagesKeys::default()),
         RuleEnum::TypescriptDotNotation(TypescriptDotNotation::default()),
         RuleEnum::TypescriptExplicitFunctionReturnType(
             TypescriptExplicitFunctionReturnType::default(),
@@ -22600,6 +22709,9 @@ pub static RULES: std::sync::LazyLock<Vec<RuleEnum>> = std::sync::LazyLock::new(
         ),
         RuleEnum::TypescriptNoUselessEmptyExport(TypescriptNoUselessEmptyExport::default()),
         RuleEnum::TypescriptNoVarRequires(TypescriptNoVarRequires::default()),
+        RuleEnum::TypescriptNoWideningAlias(TypescriptNoWideningAlias::default()),
+        RuleEnum::TypescriptNoWideningObjectKeys(TypescriptNoWideningObjectKeys::default()),
+        RuleEnum::TypescriptNoWideningReturnType(TypescriptNoWideningReturnType::default()),
         RuleEnum::TypescriptNoWrapperObjectTypes(TypescriptNoWrapperObjectTypes::default()),
         RuleEnum::TypescriptNonNullableTypeAssertionStyle(
             TypescriptNonNullableTypeAssertionStyle::default(),

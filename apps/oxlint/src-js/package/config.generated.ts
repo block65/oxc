@@ -1437,6 +1437,7 @@ export interface DummyRuleMap {
   "typescript/consistent-type-definitions"?: RuleNoConfig | [AllowWarnDeny, ConsistentTypeDefinitionsConfig];
   "typescript/consistent-type-exports"?: RuleNoConfig | [AllowWarnDeny, ConsistentTypeExportsConfig];
   "typescript/consistent-type-imports"?: RuleNoConfig | [AllowWarnDeny, ConsistentTypeImportsConfig];
+  "typescript/define-messages-keys"?: RuleNoConfig;
   "typescript/dot-notation"?: RuleNoConfig | [AllowWarnDeny, DotNotationConfig];
   "typescript/explicit-function-return-type"?: RuleNoConfig | [AllowWarnDeny, ExplicitFunctionReturnTypeConfig];
   "typescript/explicit-member-accessibility"?: RuleNoConfig | [AllowWarnDeny, ExplicitMemberAccessibilityConfig];
@@ -1498,6 +1499,9 @@ export interface DummyRuleMap {
   "typescript/no-useless-default-assignment"?: RuleNoConfig;
   "typescript/no-useless-empty-export"?: RuleNoConfig;
   "typescript/no-var-requires"?: RuleNoConfig;
+  "typescript/no-widening-alias"?: RuleNoConfig;
+  "typescript/no-widening-object-keys"?: RuleNoConfig | [AllowWarnDeny, NoWideningObjectKeysConfig];
+  "typescript/no-widening-return-type"?: RuleNoConfig | [AllowWarnDeny, NoWideningReturnTypeConfig];
   "typescript/no-wrapper-object-types"?: RuleNoConfig;
   "typescript/non-nullable-type-assertion-style"?: RuleNoConfig;
   "typescript/only-throw-error"?: RuleNoConfig | [AllowWarnDeny, OnlyThrowErrorConfig];
@@ -2071,6 +2075,8 @@ export interface DummyRuleMap {
     | [AllowWarnDeny, NoUnnecessaryConditionConfig]
     | [AllowWarnDeny, NoUnnecessaryTypeAssertionConfig]
     | [AllowWarnDeny, NoUnsafeMemberAccessConfig]
+    | [AllowWarnDeny, NoWideningObjectKeysConfig]
+    | [AllowWarnDeny, NoWideningReturnTypeConfig]
     | [AllowWarnDeny, OnlyThrowErrorConfig]
     | [AllowWarnDeny, ParameterPropertiesConfig]
     | [AllowWarnDeny, PreferLiteralEnumMember]
@@ -6237,6 +6243,22 @@ export interface NoUnsafeMemberAccessConfig {
    * Default is `false`.
    */
   allowOptionalChaining?: boolean;
+}
+export interface NoWideningObjectKeysConfig {
+  /**
+   * Helper used instead of Object.entries.
+   */
+  entries?: string;
+  /**
+   * Helper used instead of Object.keys.
+   */
+  keys?: string;
+}
+export interface NoWideningReturnTypeConfig {
+  /**
+   * Allow a named object return type to express a contract.
+   */
+  contracts?: boolean;
 }
 export interface OnlyThrowErrorConfig {
   /**
