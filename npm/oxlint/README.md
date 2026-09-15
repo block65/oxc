@@ -34,7 +34,8 @@ overrides:
   oxlint-tsgolint: npm:@block65/oxlint-tsgolint@7.0.2001
 ```
 
-The package keeps upstream's layout and the `oxlint` bin name. Enable the
+The package keeps upstream's layout and the `oxlint` bin name. Supported
+platforms: Linux x64 and Linux arm64 only. Enable the
 rules with `"plugins": ["typescript"]`, `"options": { "typeAware": true }` and
 the rule names above, then run `oxlint --type-aware`.
 
