@@ -1,0 +1,15 @@
+Block65 patched build of oxlint 1.82.0
+======================================
+
+This package is built from https://github.com/block65/oxc, branch
+block65/oxlint_v1.82.0, a fork of https://github.com/oxc-project/oxc at tag
+oxlint_v1.82.0. Upstream oxc is the work of Boshen, VoidZero Inc. and the oxc
+contributors; their LICENSE and copyright apply unchanged. The fork adds, on
+top of the upstream tag: four tsgolint rule stubs under the typescript plugin
+(define-messages-keys, no-widening-alias, no-widening-object-keys,
+no-widening-return-type) with their option types, the regenerated rule
+registry, configuration schema and config types; the npm packages are renamed
+to @block65/oxlint and @block65/oxlint-binding-<platform>; and CI is reduced
+to a release workflow. The rules themselves live in the matching
+@block65/oxlint-tsgolint build. It is maintained by Block65 and is not
+affiliated with or endorsed by the oxc project.
