@@ -60,7 +60,6 @@
     "binaryName": "oxlint",
     "packageName": "@block65/oxlint-binding",
     "targets": [
-      "aarch64-apple-darwin",
       "aarch64-unknown-linux-gnu",
       "x86_64-unknown-linux-gnu"
     ]
