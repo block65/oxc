@@ -247,6 +247,7 @@ pub(crate) mod typescript {
     pub mod consistent_type_definitions;
     pub mod consistent_type_exports;
     pub mod consistent_type_imports;
+    pub mod define_messages_keys;
     pub mod dot_notation;
     pub mod explicit_function_return_type;
     pub mod explicit_member_accessibility;
@@ -307,6 +308,9 @@ pub(crate) mod typescript {
     pub mod no_useless_default_assignment;
     pub mod no_useless_empty_export;
     pub mod no_var_requires;
+    pub mod no_widening_alias;
+    pub mod no_widening_object_keys;
+    pub mod no_widening_return_type;
     pub mod no_wrapper_object_types;
     pub mod non_nullable_type_assertion_style;
     pub mod only_throw_error;
