@@ -27,6 +27,7 @@
     "dist",
     "README.md",
     "bin/oxlint",
+    "LICENSE",
     "NOTICE"
   ],
   "type": "module",
