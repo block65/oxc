@@ -1,0 +1,137 @@
+# CI in this fork is intentionally reduced to this release workflow: it builds
+# the oxlint node bindings and publishes the @block65/oxlint packages. Only
+# manual dispatch or a published release can run it, every action is pinned
+# to a commit, and the version is the one committed in npm/oxlint/package.json.
+name: Release
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        required: true
+        description: must equal npm/oxlint/package.json, without leading `v`
+  release:
+    types: [published]
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: pnpm run build-napi-release --target x86_64-unknown-linux-gnu --use-napi-cross
+
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            build: pnpm run build-napi-release --target aarch64-unknown-linux-gnu --use-napi-cross
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            build: pnpm run build-napi-release --target aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Check the supplied version against the package
+        env:
+          INPUT: ${{ inputs.version }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          expected="$(node -p "require('./npm/oxlint/package.json').version")"
+          supplied="${INPUT:-${TAG#v}}"
+          if [ "$supplied" != "$expected" ]; then
+            echo "supplied version '$supplied' differs from the package version '$expected'"
+            exit 1
+          fi
+
+      # rust-toolchain.toml pins 1.98.1 for every cargo invocation
+      - name: Install the pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal --no-self-update
+          rustup target add --toolchain 1.98.1 ${{ matrix.target }}
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build oxlint for node.js
+        working-directory: apps/oxlint
+        run: ${{ matrix.build }}
+
+      - name: Upload binding
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: oxlint-bindings-${{ matrix.target }}
+          path: apps/oxlint/src-js/*.node
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      package_path: npm/oxlint
+      npm_dir: npm/oxlint-release
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+          registry-url: https://registry.npmjs.org/
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+          pattern: oxlint-bindings-*
+
+      - name: Generate oxlint JS build
+        working-directory: apps/oxlint
+        run: pnpm run build-js
+
+      - name: Assemble the platform packages
+        run: |
+          mkdir -p ${npm_dir}
+          pnpm napi create-npm-dirs --package-json-path ${package_path}/package.json --npm-dir ${npm_dir}
+          pnpm napi artifacts --package-json-path ${package_path}/package.json --build-output-dir apps/oxlint/src-js --npm-dir ${npm_dir}
+          for dir in ${npm_dir}/*; do
+            cp LICENSE NOTICE "$dir"/
+          done
+          cp -r apps/oxlint/dist ${package_path}/dist
+          node .github/scripts/set-optional-dependencies.mjs ${package_path} ${npm_dir}
+
+      # the trusted publisher grants "npm stage publish", so this uploads for
+      # review rather than going live. approve it with pnpm stage approve.
+      # provenance is attached automatically when publishing over oidc
+      - name: Publish
+        run: |
+          for package in ${npm_dir}/* ${package_path}; do
+            pushd "$package"
+            pnpm stage publish --access public --no-git-checks
+            popd
+          done
