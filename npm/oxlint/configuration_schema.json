@@ -7744,6 +7744,9 @@
             }
           ]
         },
+        "typescript/define-messages-keys": {
+          "$ref": "#/definitions/RuleNoConfig"
+        },
         "typescript/dot-notation": {
           "anyOf": [
             {
@@ -8382,6 +8385,49 @@
         },
         "typescript/no-var-requires": {
           "$ref": "#/definitions/RuleNoConfig"
+        },
+        "typescript/no-widening-alias": {
+          "$ref": "#/definitions/RuleNoConfig"
+        },
+        "typescript/no-widening-object-keys": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RuleNoConfig"
+            },
+            {
+              "type": "array",
+              "items": [
+                {
+                  "$ref": "#/definitions/AllowWarnDeny"
+                },
+                {
+                  "$ref": "#/definitions/NoWideningObjectKeysConfig"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          ]
+        },
+        "typescript/no-widening-return-type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RuleNoConfig"
+            },
+            {
+              "type": "array",
+              "items": [
+                {
+                  "$ref": "#/definitions/AllowWarnDeny"
+                },
+                {
+                  "$ref": "#/definitions/NoWideningReturnTypeConfig"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          ]
         },
         "typescript/no-wrapper-object-types": {
           "$ref": "#/definitions/RuleNoConfig"
@@ -16479,6 +16525,36 @@
             "type": "string"
           },
           "markdownDescription": "An array of terms to match. The matching is case-insensitive."
+        }
+      },
+      "additionalProperties": false
+    },
+    "NoWideningObjectKeysConfig": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "description": "Helper used instead of Object.entries.",
+          "default": "typedEntries",
+          "type": "string",
+          "markdownDescription": "Helper used instead of Object.entries."
+        },
+        "keys": {
+          "description": "Helper used instead of Object.keys.",
+          "default": "typedKeys",
+          "type": "string",
+          "markdownDescription": "Helper used instead of Object.keys."
+        }
+      },
+      "additionalProperties": false
+    },
+    "NoWideningReturnTypeConfig": {
+      "type": "object",
+      "properties": {
+        "contracts": {
+          "description": "Allow a named object return type to express a contract.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Allow a named object return type to express a contract."
         }
       },
       "additionalProperties": false
