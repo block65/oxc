@@ -1,7 +1,7 @@
 {
-  "name": "oxlint",
+  "name": "@block65/oxlint",
   "version": "1.82.0",
-  "description": "Linter for the JavaScript Oxidation Compiler",
+  "description": "Block65 patched build of oxlint 1.82.0 (oxc-project/oxc) adding four type-aware rules provided by @block65/oxlint-tsgolint. Not the oxc project.",
   "keywords": [
     "eslint",
     "javascript",
@@ -10,17 +10,14 @@
     "oxlint",
     "typescript"
   ],
-  "homepage": "https://oxc.rs/docs/guide/usage/linter",
-  "bugs": "https://github.com/oxc-project/oxc/issues",
+  "homepage": "https://github.com/block65/oxc#readme",
+  "bugs": "https://github.com/block65/oxc/issues",
   "license": "MIT",
-  "author": "Boshen and oxc contributors",
+  "author": "Block65",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/oxc-project/oxc",
+    "url": "git+https://github.com/block65/oxc",
     "directory": "npm/oxlint"
-  },
-  "funding": {
-    "url": "https://github.com/sponsors/oxc-project"
   },
   "bin": {
     "oxlint": "bin/oxlint"
@@ -29,7 +26,8 @@
     "configuration_schema.json",
     "dist",
     "README.md",
-    "bin/oxlint"
+    "bin/oxlint",
+    "NOTICE"
   ],
   "type": "module",
   "main": "dist/index.js",
@@ -59,27 +57,11 @@
   },
   "napi": {
     "binaryName": "oxlint",
-    "packageName": "@oxlint/binding",
+    "packageName": "@block65/oxlint-binding",
     "targets": [
       "aarch64-apple-darwin",
-      "aarch64-linux-android",
-      "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
-      "aarch64-unknown-linux-musl",
-      "aarch64-unknown-linux-ohos",
-      "armv7-linux-androideabi",
-      "armv7-unknown-linux-gnueabihf",
-      "armv7-unknown-linux-musleabihf",
-      "i686-pc-windows-msvc",
-      "powerpc64le-unknown-linux-gnu",
-      "riscv64gc-unknown-linux-gnu",
-      "riscv64gc-unknown-linux-musl",
-      "s390x-unknown-linux-gnu",
-      "x86_64-apple-darwin",
-      "x86_64-pc-windows-msvc",
-      "x86_64-unknown-freebsd",
-      "x86_64-unknown-linux-gnu",
-      "x86_64-unknown-linux-musl"
+      "x86_64-unknown-linux-gnu"
     ]
   },
   "engines": {

@@ -1,58 +1,45 @@
-<p align="center">
-  <br>
-  <br>
-  <a href="https://oxc.rs" target="_blank" rel="noopener noreferrer">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://oxc.rs/oxc-light.svg">
-      <source media="(prefers-color-scheme: light)" srcset="https://oxc.rs/oxc-dark.svg">
-      <img alt="Oxc logo" src="https://oxc.rs/oxc-dark.svg" height="60">
-    </picture>
-  </a>
-  <br>
-  <br>
-  <br>
-</p>
+# @block65/oxlint
 
-<div align="center">
+A Block65 patched build of [oxlint](https://github.com/oxc-project/oxc) 1.82.0.
+It is not the oxc project. The source is
+[block65/oxc](https://github.com/block65/oxc), branch `block65/oxlint_v1.82.0`,
+which is the upstream tag plus the patch set described in `NOTICE`. Upstream's
+LICENSE and copyright apply unchanged.
 
-[![MIT licensed][license-badge]][license-url]
-[![Build Status][ci-badge]][ci-url]
-[![Code Coverage][code-coverage-badge]][code-coverage-url]
+## What it adds
 
-[![Discord chat][discord-badge]][discord-url]
-[![Playground][playground-badge]][playground-url]
+Four type-aware rules under the `typescript/` namespace, routed to the
+matching [`@block65/oxlint-tsgolint`](https://github.com/block65/tsgolint)
+build, which implements them:
 
-[discord-badge]: https://img.shields.io/discord/1079625926024900739?logo=discord&label=Discord
-[discord-url]: https://discord.gg/9uXCAwqQZW
-[license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
-[license-url]: https://github.com/oxc-project/oxc/blob/main/LICENSE
-[ci-badge]: https://github.com/oxc-project/oxc/actions/workflows/ci.yml/badge.svg?event=push&branch=main
-[ci-url]: https://github.com/oxc-project/oxc/actions/workflows/ci.yml?query=event%3Apush+branch%3Amain
-[npm-badge]: https://img.shields.io/npm/v/oxlint/latest?color=brightgreen
-[npm-url]: https://npmx.dev/package/oxlint/v/latest
-[code-size-badge]: https://img.shields.io/github/languages/code-size/oxc-project/oxc
-[code-size-url]: https://github.com/oxc-project/oxc
-[code-coverage-badge]: https://codecov.io/github/oxc-project/oxc/branch/main/graph/badge.svg
-[code-coverage-url]: https://codecov.io/gh/oxc-project/oxc
-[playground-badge]: https://img.shields.io/badge/Playground-blue?color=9BE4E0
-[playground-url]: https://playground.oxc.rs/
+- `typescript/define-messages-keys`
+- `typescript/no-widening-alias`
+- `typescript/no-widening-object-keys`
+- `typescript/no-widening-return-type`
 
-</div>
+Everything else is upstream oxlint 1.82.0, unchanged. Stock oxlint rejects a
+configuration that names these rules, so a project using them fails loudly
+rather than linting without them.
 
-# ⚓ Oxc
+## Installation
 
-The Oxidation Compiler is creating a suite of high-performance tools for JavaScript and TypeScript.
+Keep the plain `oxlint` and `oxlint-tsgolint` dependencies in `package.json`
+and route them to the patched builds with a pnpm override, so no command or
+config names the fork:
 
-## Oxlint
+```yaml
+# pnpm-workspace.yaml
+overrides:
+  oxlint: npm:@block65/oxlint@1.82.0
+  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@7.0.2001
+```
 
-This is the linter for oxc.
+The package keeps upstream's layout and the `oxlint` bin name. Enable the
+rules with `"plugins": ["typescript"]`, `"options": { "typeAware": true }` and
+the rule names above, then run `oxlint --type-aware`.
 
-See [usage instructions](https://oxc.rs/docs/guide/usage/linter).
+## Documentation
 
-Run
-
-- `npx --yes oxlint@latest` in your JavaScript / TypeScript codebase and see it complete in milliseconds. No configurations are required.
-- `npx oxlint@latest --help` for quick usage instructions.
-- `npx oxlint@latest --rules` for the list of rules.
-- `npx skills add https://github.com/oxc-project/oxc --skill migrate-oxlint` to install the [`migrate-oxlint`](https://skills.sh/oxc-project/oxc/migrate-oxlint) skill, then run `/migrate-oxlint` to migrate from ESLint.
-- See also [migrate from ESLint](https://oxc.rs/docs/guide/usage/linter/migrate-from-eslint.html).
+Upstream's documentation covers everything but the four rules:
+[oxc.rs](https://oxc.rs/docs/guide/usage/linter.html). The four rules are
+documented in the [block65 oxlint plugin](https://github.com/block65/oxlint-plugin).
