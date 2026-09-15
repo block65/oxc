@@ -28,6 +28,11 @@ jobs:
   build:
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
+    env:
+      # `clang` lacks the `__ldar64`/`__stlr64` MSVC intrinsics that mimalloc's
+      # atomic.h uses on the ARM64 MSVC C path, so leave TARGET_CC unset on
+      # `*-pc-windows-msvc` targets and let cc-rs pick `cl.exe`.
+      TARGET_CC: ${{ !contains(matrix.target, 'pc-windows-msvc') && 'clang' || '' }} # for mimalloc
     strategy:
       fail-fast: false
       matrix:
