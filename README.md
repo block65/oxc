@@ -1,8 +1,6 @@
 # @block65/oxlint
 
-Block65 build of oxlint 1.82.0 with additional type-aware rules routed to @block65/oxlint-tsgolint. Internal use.
-
-Source: https://github.com/block65/oxc, branch block65/oxlint_v1.82.0. Patch set listed in NOTICE. Upstream LICENSE applies.
+Fork of oxlint 1.82.0 with additional type-aware rules, provided by @block65/oxlint-tsgolint. Block65 internal.
 
 ## Use
 
