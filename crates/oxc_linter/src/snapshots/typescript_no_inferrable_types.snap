@@ -4,20 +4,6 @@ source: crates/oxc_linter/src/tester.rs
 
   ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
    ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: bigint = 10n;
-   ·        ────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: bigint = -10n;
-   ·        ────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
  1 │ const a: bigint = BigInt(10);
    ·        ────────
    ╰────
@@ -46,20 +32,6 @@ source: crates/oxc_linter/src/tester.rs
 
   ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
    ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: boolean = false;
-   ·        ─────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: boolean = true;
-   ·        ─────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
  1 │ const a: boolean = Boolean(null);
    ·        ─────────
    ╰────
@@ -69,34 +41,6 @@ source: crates/oxc_linter/src/tester.rs
    ╭─[no_inferrable_types.tsx:1:8]
  1 │ const a: boolean = Boolean?.(null);
    ·        ─────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: boolean = !0;
-   ·        ─────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: number = 10;
-   ·        ────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: number = +10;
-   ·        ────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: number = -10;
-   ·        ────────
    ╰────
   help: Remove the type annotation
 
@@ -221,27 +165,6 @@ source: crates/oxc_linter/src/tester.rs
 
   ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
    ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: string = "str";
-   ·        ────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: string = 'str';
-   ·        ────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
- 1 │ const a: string = `str`;
-   ·        ────────
-   ╰────
-  help: Remove the type annotation
-
-  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
-   ╭─[no_inferrable_types.tsx:1:8]
  1 │ const a: string = String(1);
    ·        ────────
    ╰────
@@ -279,6 +202,76 @@ source: crates/oxc_linter/src/tester.rs
    ╭─[no_inferrable_types.tsx:1:8]
  1 │ const a: undefined = void someValue;
    ·        ───────────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:6]
+ 1 │ let a: number = 10;
+   ·      ────────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:6]
+ 1 │ let a: string = 'str';
+   ·      ────────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:6]
+ 1 │ let a: boolean = true;
+   ·      ─────────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:6]
+ 1 │ let a: bigint = 10n;
+   ·      ────────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:6]
+ 1 │ var a: string = 'str';
+   ·      ────────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:8]
+ 1 │ const a: 5 = 5;
+   ·        ───
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:8]
+ 1 │ const a: 'str' = 'str';
+   ·        ───────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:8]
+ 1 │ const a: true = true;
+   ·        ──────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:8]
+ 1 │ const a: 10n = 10n;
+   ·        ─────
+   ╰────
+  help: Remove the type annotation
+
+  ⚠ typescript(no-inferrable-types): Type can be trivially inferred from the initializer
+   ╭─[no_inferrable_types.tsx:1:14]
+ 1 │ function fn(a: number = 5) {}
+   ·              ────────
    ╰────
   help: Remove the type annotation
 
