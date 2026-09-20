@@ -42,21 +42,27 @@ declare_oxc_lint!(
     ///
     /// Explicitly typing variables or parameters that are initialized to a literal value is unnecessary because TypeScript can infer the type from the value.
     ///
+    /// A `const` initialized to a literal is the exception: inference gives it the
+    /// literal type, so `const a: number = 5` is wider than `const a = 5` and the
+    /// annotation carries information that removing it would lose.
+    ///
     /// ### Examples
     ///
     /// Examples of **incorrect** code for this rule:
     /// ```ts
-    /// const a: number = 5;
-    /// const b: string = 'foo';
-    /// const c: boolean = true;
+    /// let a: number = 5;
+    /// let b: string = 'foo';
+    /// let c: boolean = true;
+    /// const d: 5 = 5;
     /// const fn = (a: number = 5, b: boolean = true, c: string = 'foo') => {};
     /// ```
     ///
     /// Examples of **correct** code for this rule:
     /// ```ts
-    /// const a = 5;
-    /// const b = 'foo';
-    /// const c = true;
+    /// let a = 5;
+    /// let b = 'foo';
+    /// let c = true;
+    /// const d: number = 5;
     /// const fn = (a = 5, b = true, c = 'foo') => {};
     /// ```
     NoInferrableTypes,
@@ -79,6 +85,7 @@ impl Rule for NoInferrableTypes {
                 if let (Some(init), Some(type_annotation)) =
                     (&variable_decl.init, &variable_decl.type_annotation)
                     && is_inferrable_type(type_annotation, init)
+                    && !is_const_literal_widening(ctx, node, type_annotation, init)
                 {
                     let delete_span =
                         get_delete_span(ctx, type_annotation.span(), variable_decl.definite, false);
@@ -191,6 +198,56 @@ fn get_delete_span(
         }
     }
     type_annotation_span
+}
+
+/// A `const` keeps the literal type inference gives it, so `const a: number = 5` widens
+/// `5` to `number` and the annotation survives into declaration output. `let`, `var`,
+/// parameters and properties widen on their own, so there the annotation really is
+/// redundant. Annotating the literal type itself (`const a: 5 = 5`) stays redundant.
+fn is_const_literal_widening<'a>(
+    ctx: &LintContext<'a>,
+    node: &AstNode<'a>,
+    type_annotation: &TSTypeAnnotation<'a>,
+    init: &Expression<'a>,
+) -> bool {
+    if !matches!(
+        type_annotation.type_annotation,
+        TSType::TSNumberKeyword(_)
+            | TSType::TSStringKeyword(_)
+            | TSType::TSBooleanKeyword(_)
+            | TSType::TSBigIntKeyword(_)
+    ) {
+        return false;
+    }
+
+    let AstKind::VariableDeclaration(declaration) = ctx.nodes().parent_kind(node.id()) else {
+        return false;
+    };
+
+    declaration.kind.is_const() && infers_literal_type(init)
+}
+
+/// Whether TypeScript infers a literal type for this initializer. Constant folding sees
+/// through `+`, `-` and `!`, so `-10n` and `!0` are literals too, and a template literal
+/// is one as long as every substitution is. `NaN`, `Infinity` and `Number(x)` are not: they
+/// are already the widened primitive, which is why they keep being reported on a `const`.
+fn infers_literal_type(init: &Expression) -> bool {
+    match init.get_inner_expression() {
+        Expression::BigIntLiteral(_)
+        | Expression::BooleanLiteral(_)
+        | Expression::NumericLiteral(_)
+        | Expression::StringLiteral(_) => true,
+        Expression::TemplateLiteral(template_literal) => {
+            template_literal.expressions.iter().all(infers_literal_type)
+        }
+        Expression::UnaryExpression(unary_expr) => {
+            matches!(
+                unary_expr.operator,
+                UnaryOperator::UnaryPlus | UnaryOperator::UnaryNegation | UnaryOperator::LogicalNot
+            ) && infers_literal_type(&unary_expr.argument)
+        }
+        _ => false,
+    }
 }
 
 fn is_inferrable_type(type_annotation: &TSTypeAnnotation, init: &Expression) -> bool {
@@ -472,23 +529,29 @@ fn test() {
             None,
         ),
         ("class Foo { constructor(public a = true) {} }", None),
+        // Inference gives a `const` the literal type, so the widened annotation is what
+        // keeps `a` a `number` instead of a `5`
+        ("const a: number = 10;", None),
+        ("const a: number = +10;", None),
+        ("const a: number = -10;", None),
+        ("const a: string = 'str';", None),
+        (r#"const a: string = "str";"#, None),
+        ("const a: string = `str`;", None),
+        ("const a: string = `str${'ing'}`;", None),
+        ("const a: boolean = true;", None),
+        ("const a: boolean = false;", None),
+        ("const a: boolean = !0;", None),
+        ("const a: bigint = 10n;", None),
+        ("const a: bigint = -10n;", None),
     ];
 
     let fail = vec![
-        ("const a: bigint = 10n;", None),
-        ("const a: bigint = -10n;", None),
         ("const a: bigint = BigInt(10);", None),
         ("const a: bigint = -BigInt(10);", None),
         ("const a: bigint = BigInt?.(10);", None),
         ("const a: bigint = -BigInt?.(10);", None),
-        ("const a: boolean = false;", None),
-        ("const a: boolean = true;", None),
         ("const a: boolean = Boolean(null);", None),
         ("const a: boolean = Boolean?.(null);", None),
-        ("const a: boolean = !0;", None),
-        ("const a: number = 10;", None),
-        ("const a: number = +10;", None),
-        ("const a: number = -10;", None),
         ("const a: number = Number('1');", None),
         ("const a: number = +Number('1');", None),
         ("const a: number = -Number('1');", None),
@@ -506,15 +569,24 @@ fn test() {
         ("const a: RegExp = RegExp('a');", None),
         ("const a: RegExp = RegExp?.('a');", None),
         ("const a: RegExp = new RegExp('a');", None),
-        (r#"const a: string = "str";"#, None), // This one exists to ensure single and double quotes both work.
-        ("const a: string = 'str';", None),
-        ("const a: string = `str`;", None),
         ("const a: string = String(1);", None),
         ("const a: string = String?.(1);", None),
         ("const a: symbol = Symbol('a');", None),
         ("const a: symbol = Symbol?.('a');", None),
         ("const a: undefined = undefined;", None),
         ("const a: undefined = void someValue;", None),
+        // `let` and `var` widen to the primitive on their own
+        ("let a: number = 10;", None),
+        ("let a: string = 'str';", None),
+        ("let a: boolean = true;", None),
+        ("let a: bigint = 10n;", None),
+        ("var a: string = 'str';", None),
+        // Annotating the literal type itself adds nothing on a `const`
+        ("const a: 5 = 5;", None),
+        ("const a: 'str' = 'str';", None),
+        ("const a: true = true;", None),
+        ("const a: 10n = 10n;", None),
+        ("function fn(a: number = 5) {}", None),
         (
             "const fn = (a?: number = 5) => {};",
             Some(serde_json::json!([ { "ignoreParameters": false, }, ])),
@@ -559,20 +631,12 @@ fn test() {
     ];
 
     let fix = vec![
-        ("const a: bigint = 10n;", "const a = 10n;", None),
-        ("const a: bigint = -10n;", "const a = -10n;", None),
         ("const a: bigint = BigInt(10);", "const a = BigInt(10);", None),
         ("const a: bigint = -BigInt(10);", "const a = -BigInt(10);", None),
         ("const a: bigint = BigInt?.(10);", "const a = BigInt?.(10);", None),
         ("const a: bigint = -BigInt?.(10);", "const a = -BigInt?.(10);", None),
-        ("const a: boolean = false;", "const a = false;", None),
-        ("const a: boolean = true;", "const a = true;", None),
         ("const a: boolean = Boolean(null);", "const a = Boolean(null);", None),
         ("const a: boolean = Boolean?.(null);", "const a = Boolean?.(null);", None),
-        ("const a: boolean = !0;", "const a = !0;", None),
-        ("const a: number = 10;", "const a = 10;", None),
-        ("const a: number = +10;", "const a = +10;", None),
-        ("const a: number = -10;", "const a = -10;", None),
         ("const a: number = Number('1');", "const a = Number('1');", None),
         ("const a: number = +Number('1');", "const a = +Number('1');", None),
         ("const a: number = -Number('1');", "const a = -Number('1');", None),
@@ -590,14 +654,22 @@ fn test() {
         ("const a: RegExp = RegExp('a');", "const a = RegExp('a');", None),
         ("const a: RegExp = RegExp?.('a');", "const a = RegExp?.('a');", None),
         ("const a: RegExp = new RegExp('a');", "const a = new RegExp('a');", None),
-        ("const a: string = 'str';", "const a = 'str';", None),
-        ("const a: string = `str`;", "const a = `str`;", None),
         ("const a: string = String(1);", "const a = String(1);", None),
         ("const a: string = String?.(1);", "const a = String?.(1);", None),
         ("const a: symbol = Symbol('a');", "const a = Symbol('a');", None),
         ("const a: symbol = Symbol?.('a');", "const a = Symbol?.('a');", None),
         ("const a: undefined = undefined;", "const a = undefined;", None),
         ("const a: undefined = void someValue;", "const a = void someValue;", None),
+        ("let a: number = 10;", "let a = 10;", None),
+        ("let a: string = 'str';", "let a = 'str';", None),
+        ("let a: boolean = true;", "let a = true;", None),
+        ("let a: bigint = 10n;", "let a = 10n;", None),
+        ("var a: string = 'str';", "var a = 'str';", None),
+        ("const a: 5 = 5;", "const a = 5;", None),
+        ("const a: 'str' = 'str';", "const a = 'str';", None),
+        ("const a: true = true;", "const a = true;", None),
+        ("const a: 10n = 10n;", "const a = 10n;", None),
+        ("function fn(a: number = 5) {}", "function fn(a = 5) {}", None),
         // (
         //     "const fn = (a?: number = 5) => {};",
         //     "const fn = (a = 5) => {};",
