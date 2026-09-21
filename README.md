@@ -1,40 +1,31 @@
-# @block65/oxlint
+# block65/oxc
 
-oxlint 1.83.0 with four added type-aware rules and one changed upstream rule.
-Those four are implemented in @block65/oxlint-tsgolint. Linux x64 and arm64
-only.
+A fork of [oxc](https://github.com/oxc-project/oxc) that builds one package,
+`@block65/oxlint`. The rest of the monorepo is upstream's and goes unused.
 
-```yaml
-# pnpm-workspace.yaml
-overrides:
-  oxlint: npm:@block65/oxlint@1.83.0
-  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@7.0.200200
-```
+The working branch is a stack of fork commits rebased onto an upstream release
+tag, currently `oxlint_v1.83.0`. Upstream `main` is never merged, so GitHub
+reports the branch as behind it by however far `main` has moved past that
+release. That is expected.
 
-## Added rules
+## Where the changes are
 
-- `typescript/define-messages-keys`
-- `typescript/no-widening-alias`
-- `typescript/no-widening-object-keys`
-- `typescript/no-widening-return-type`
+`crates/oxc_linter/src/rules/typescript/` holds the four added rules and the
+changed `no-inferrable-types`; `npm/oxlint/README.md` describes their
+behaviour. The added rules are stubs, implemented in
+[block65/tsgolint](https://github.com/block65/tsgolint).
 
-## Versioning
+`.github/workflows/release.yml` is the only workflow. It builds the Linux
+bindings and runs `pnpm stage publish`, which uploads for review rather than
+going live. `pnpm stage approve` completes a publish.
 
-The patch is upstream's patch times 100 plus a build number. Upstream 1.83.0
-gives 1.83.0, then 1.83.1; an upstream 1.83.1 would give 1.83.100. The major
-and minor are upstream's, so `oxlint` ranges keep resolving.
+## Rebasing onto a new upstream release
 
-## Changed rule
+Cherry-pick the fork commits onto the new `oxlint_v<version>` tag, then update
+the version literals and both NOTICE files.
 
-`typescript/no-inferrable-types` reports a primitive annotation it considers
-redundant and suggests deleting it. On a `const` holding a literal the
-annotation is not redundant: `const a: number = 5` is typed `number`, while
-`const a = 5` is typed `5`. Deleting it narrows the type, and on an exported
-declaration that narrows what every other file sees.
+## Releasing
 
-This build stops reporting that case for `number`, `string`, `boolean` and
-`bigint`. Still reported: `const a: 5 = 5`, where the annotation matches what
-inference already gives, and `let`, `var`, parameters and properties, which
-widen on their own.
-
-A rebase has to carry this forward.
+The version is upstream's patch times 100 plus a build number, described in
+`npm/oxlint/README.md`. Commit it on its own, tag that commit `v<version>`,
+and publish a GitHub release against the tag.
