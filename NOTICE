@@ -1,4 +1,4 @@
-Built from https://github.com/block65/oxc, branch block65/main, on oxc-project/oxc tag oxlint_v1.83.0.
+Built from https://github.com/block65/oxc at tag v1.83.0, on oxc-project/oxc tag oxlint_v1.83.0.
 Upstream copyright and LICENSE apply.
 .github/scripts/set-optional-dependencies.mjs
 .github/workflows/release.yml
