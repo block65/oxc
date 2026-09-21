@@ -17,6 +17,9 @@
     "url": "git+https://github.com/block65/oxc",
     "directory": "npm/oxlint"
   },
+  "bugs": {
+    "url": "https://github.com/block65/oxc#readme"
+  },
   "bin": {
     "oxlint": "bin/oxlint"
   },
