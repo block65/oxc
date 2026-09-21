@@ -3,10 +3,12 @@
 A fork of [oxc](https://github.com/oxc-project/oxc) that builds one package,
 `@block65/oxlint`. The rest of the monorepo is upstream's and goes unused.
 
-The working branch is a stack of fork commits rebased onto an upstream release
-tag, currently `oxlint_v1.83.0`. Upstream `main` is never merged, so GitHub
-reports the branch as behind it by however far `main` has moved past that
-release. That is expected.
+`main` is a stack of fork commits rebased onto upstream `main`, so it reads as
+ahead of upstream and never behind. Upstream is never merged in: each sync
+replays the stack and pushes with `--force-with-lease`. `main` carries no fork
+version. `npm/oxlint/package.json` holds whatever version upstream `main`
+holds, and the package README and description name no version. Releases are
+cut from tags, described below.
 
 ## Where the changes are
 
@@ -15,17 +17,49 @@ changed `no-inferrable-types`; `npm/oxlint/README.md` describes their
 behaviour. The added rules are stubs, implemented in
 [block65/tsgolint](https://github.com/block65/tsgolint).
 
-`.github/workflows/release.yml` is the only workflow. It builds the Linux
+`.github/workflows/deploy.yml` is the only workflow. It builds the Linux
 bindings and runs `pnpm stage publish`, which uploads for review rather than
-going live. `pnpm stage approve` completes a publish.
+going live. A maintainer logged in to npm with 2FA completes the publish with
+`pnpm stage approve`.
 
-## Rebasing onto a new upstream release
+## Syncing with upstream
 
-Cherry-pick the fork commits onto the new `oxlint_v<version>` tag, then update
-the version literals and both NOTICE files.
+```sh
+git fetch https://github.com/oxc-project/oxc.git main
+git rebase FETCH_HEAD
+git push --force-with-lease
+```
+
+Two kinds of conflict come up. Generated files
+(`crates/oxc_linter/src/generated/`, `npm/oxlint/configuration_schema.json`,
+`apps/oxlint/src-js/package/config.generated.ts`) take upstream's copy and are
+regenerated, never hand-merged:
+
+```sh
+cargo run -q -p oxc_linter_codegen
+cargo run -q -p website_linter schema-json > schema.json && mv schema.json npm/oxlint/configuration_schema.json
+pnpm --filter oxlint-app generate-config-types
+```
+
+Files the fork deletes (`AGENTS.md`, `CLAUDE.md`, upstream CI) that upstream
+has since edited are resolved with `git rm`.
 
 ## Releasing
 
+A release is the stack replayed onto the upstream release tag, plus one commit
+that sets the version in `npm/oxlint/package.json`:
+
+```sh
+git fetch https://github.com/oxc-project/oxc.git main
+base=$(git merge-base main FETCH_HEAD)
+git fetch https://github.com/oxc-project/oxc.git tag oxlint_v[upstream]
+git checkout --detach main
+git rebase --onto oxlint_v[upstream] "$base"
+```
+
 The version is upstream's patch times 100 plus a build number, described in
-`npm/oxlint/README.md`. Commit it on its own, tag that commit `v<version>`,
-and publish a GitHub release against the tag.
+`npm/oxlint/README.md`. The version commit is omitted when the two are equal,
+as for build 00 of a `.0` release. Tag the last commit `v[version]` and publish
+a GitHub release against the tag, which runs `deploy.yml`. Release tags are not
+on `main`'s history, and `main` is not rewritten for a release. When the build
+raises the `oxlint-tsgolint` floor in `package.json`, publish tsgolint first.
