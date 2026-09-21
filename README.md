@@ -26,10 +26,15 @@ and minor are upstream's, so `oxlint` ranges keep resolving.
 
 ## Changed rule
 
-A rebase has to carry this forward.
+`typescript/no-inferrable-types` reports a primitive annotation it considers
+redundant and suggests deleting it. On a `const` holding a literal the
+annotation is not redundant: `const a: number = 5` is typed `number`, while
+`const a = 5` is typed `5`. Deleting it narrows the type, and on an exported
+declaration that narrows what every other file sees.
 
-`typescript/no-inferrable-types` no longer reports a widened primitive
-annotation on a `const` initialised to a literal (`const a: number = 5`).
-Inference gives `a` the type `5`, so removing the annotation narrows it, and
-the suggested fix was narrowing exported types. `const a: 5 = 5`, `let`, `var`,
-parameters and properties are still reported.
+This build stops reporting that case for `number`, `string`, `boolean` and
+`bigint`. Still reported: `const a: 5 = 5`, where the annotation matches what
+inference already gives, and `let`, `var`, parameters and properties, which
+widen on their own.
+
+A rebase has to carry this forward.
