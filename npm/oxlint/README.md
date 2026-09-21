@@ -1,10 +1,8 @@
 # @block65/oxlint
 
-oxlint 1.83.0 plus four type-aware rules and one changed upstream rule. The
-rules are implemented in @block65/oxlint-tsgolint. Linux x64 and arm64 only.
-
-Internal to Block65, on a public registry only because a pnpm override has to
-resolve from one. Not supported for outside use, and the repo takes no issues.
+oxlint 1.83.0 with four added type-aware rules and one changed upstream rule.
+Those four are implemented in @block65/oxlint-tsgolint. Linux x64 and arm64
+only.
 
 ```yaml
 # pnpm-workspace.yaml
@@ -22,6 +20,6 @@ overrides:
 
 ## Versioning
 
-Patch is upstream's patch times 100 plus a build number: upstream 1.83.0 gives
-1.83.0, then 1.83.1; an upstream 1.83.1 would give 1.83.100. Major and minor
-are upstream's, so `oxlint` ranges keep resolving.
+The patch is upstream's patch times 100 plus a build number. Upstream 1.83.0
+gives 1.83.0, then 1.83.1; an upstream 1.83.1 would give 1.83.100. The major
+and minor are upstream's, so `oxlint` ranges keep resolving.
