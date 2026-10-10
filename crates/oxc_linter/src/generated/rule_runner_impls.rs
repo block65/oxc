@@ -1847,6 +1847,11 @@ impl RuleRunner for crate::rules::typescript::no_non_null_assertion::NoNonNullAs
     const RUN_FUNCTIONS: RuleRunFunctionsImplemented = RuleRunFunctionsImplemented::Run;
 }
 
+impl RuleRunner for crate::rules::typescript::no_open_string_fallback::NoOpenStringFallback {
+    const NODE_TYPES: Option<&AstTypesBitset> = None;
+    const RUN_FUNCTIONS: RuleRunFunctionsImplemented = RuleRunFunctionsImplemented::Unknown;
+}
+
 impl RuleRunner
     for crate::rules::typescript::no_redundant_type_constituents::NoRedundantTypeConstituents
 {
