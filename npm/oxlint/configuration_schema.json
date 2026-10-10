@@ -8189,6 +8189,9 @@
         "typescript/no-non-null-assertion": {
           "$ref": "#/definitions/RuleNoConfig"
         },
+        "typescript/no-open-string-fallback": {
+          "$ref": "#/definitions/RuleNoConfig"
+        },
         "typescript/no-redundant-type-constituents": {
           "$ref": "#/definitions/RuleNoConfig"
         },
