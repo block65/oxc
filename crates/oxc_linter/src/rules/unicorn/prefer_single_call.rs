@@ -2,7 +2,7 @@ use itertools::Itertools;
 
 use oxc_ast::{
     AstKind,
-    ast::{CallExpression, Expression, Statement},
+    ast::{BindingPattern, CallExpression, Expression, Statement, TSType, TSTypeAnnotation},
 };
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
@@ -76,12 +76,19 @@ declare_oxc_lint!(
     ///
     /// importScripts('foo.js', 'bar.js');
     /// ```
+    ///
+    /// ### Fixes
+    ///
+    /// Merging `push()` or `unshift()` calls is only a safe fix when the
+    /// receiver is known to be an array: a variable initialised with an array
+    /// and never reassigned, or one annotated with an array type. Any other
+    /// receiver may have a `push()` that is not variadic, such as a stream's,
+    /// so merging its calls is offered as a suggestion instead.
     PreferSingleCall,
     unicorn,
     pedantic,
     recommended,
-    pending,
-    fix,
+    fix_or_suggestion,
     config = PreferSingleCallConfig,
     version = "1.70.0",
     short_description = "Enforce combining multiple `Array#push()`, `Element#classList.{add,remove}()`, and `importScripts()` into one call.",
@@ -178,7 +185,13 @@ impl Rule for PreferSingleCall {
             return;
         }
 
-        ctx.diagnostic_with_fix(prefer_single_call_diagnostic(diag_span, description), |fixer| {
+        let fix_kind = match curr_info.array_receiver {
+            Some(receiver) if !is_known_array(receiver, ctx) => FixKind::Suggestion,
+            _ => FixKind::SafeFix,
+        };
+
+        let diagnostic = prefer_single_call_diagnostic(diag_span, description);
+        ctx.diagnostic_with_fix_of_kind(diagnostic, fix_kind, |fixer| {
             let mut fix = fixer
                 .new_fix_with_capacity(2)
                 .with_message(format!("Merge into previous `{description}` call"));
@@ -254,6 +267,9 @@ struct CallInfo<'a> {
     /// into it. This is required for `unshift`, where call order affects the
     /// final array order.
     keep_second_call: bool,
+    /// The receiver of an `Array#{push,unshift}()` call, which the rule
+    /// matches by method name alone and so may not be an array.
+    array_receiver: Option<&'a Expression<'a>>,
 }
 
 /// Returns `true` if `expr` is a "stable" receiver — an expression whose
@@ -309,6 +325,7 @@ fn classify_call<'a>(
                         receiver_text,
                         diagnostic_span: member.property.span,
                         keep_second_call,
+                        array_receiver: Some(&member.object),
                     })
                 }
 
@@ -337,6 +354,7 @@ fn classify_call<'a>(
                         receiver_text,
                         diagnostic_span: member.property.span,
                         keep_second_call: false,
+                        array_receiver: None,
                     })
                 }
 
@@ -350,9 +368,76 @@ fn classify_call<'a>(
             receiver_text: "importScripts",
             diagnostic_span: ident.span,
             keep_second_call: false,
+            array_receiver: None,
         }),
 
         _ => None,
+    }
+}
+
+/// Returns `true` if `expr` is a variable that is known to hold an array:
+/// one annotated with an array type, or one initialised with an array and
+/// never reassigned.
+fn is_known_array<'a>(expr: &Expression<'a>, ctx: &LintContext<'a>) -> bool {
+    let Expression::Identifier(ident) = expr.without_parentheses() else {
+        return false;
+    };
+    let Some(symbol_id) = ctx.scoping().get_reference(ident.reference_id()).symbol_id() else {
+        return false;
+    };
+    match ctx.nodes().kind(ctx.scoping().symbol_declaration(symbol_id)) {
+        AstKind::VariableDeclarator(decl) => {
+            if !matches!(decl.id, BindingPattern::BindingIdentifier(_)) {
+                return false;
+            }
+            if let Some(annotation) = &decl.type_annotation {
+                return is_array_type_annotation(annotation, ctx);
+            }
+            decl.init.as_ref().is_some_and(|init| is_array_construction(init, ctx))
+                && !ctx.scoping().symbol_is_mutated(symbol_id)
+        }
+        AstKind::FormalParameter(param) => {
+            matches!(param.pattern, BindingPattern::BindingIdentifier(_))
+                && param
+                    .type_annotation
+                    .as_deref()
+                    .is_some_and(|annotation| is_array_type_annotation(annotation, ctx))
+        }
+        _ => false,
+    }
+}
+
+/// Returns `true` for `T[]` and `Array<T>`, where `Array` is the global.
+fn is_array_type_annotation<'a>(annotation: &TSTypeAnnotation<'a>, ctx: &LintContext<'a>) -> bool {
+    match &annotation.type_annotation {
+        TSType::TSArrayType(_) => true,
+        TSType::TSTypeReference(reference) => {
+            reference.type_name.get_identifier_reference().is_some_and(|ident| {
+                ident.name == "Array" && ctx.is_reference_to_global_variable(ident)
+            })
+        }
+        _ => false,
+    }
+}
+
+/// Returns `true` for `[...]`, `Array(...)`, `new Array(...)`, `Array.from(...)`
+/// and `Array.of(...)`, where `Array` is the global.
+fn is_array_construction<'a>(expr: &Expression<'a>, ctx: &LintContext<'a>) -> bool {
+    let is_global_array = |callee: &Expression<'a>| {
+        matches!(callee.without_parentheses(), Expression::Identifier(ident)
+            if ident.name == "Array" && ctx.is_reference_to_global_variable(ident))
+    };
+    match expr.without_parentheses() {
+        Expression::ArrayExpression(_) => true,
+        Expression::NewExpression(new_expr) => is_global_array(&new_expr.callee),
+        Expression::CallExpression(call) => match call.callee.without_parentheses() {
+            Expression::StaticMemberExpression(member) => {
+                matches!(member.property.name.as_str(), "from" | "of")
+                    && is_global_array(&member.object)
+            }
+            callee => is_global_array(callee),
+        },
+        _ => false,
     }
 }
 
@@ -398,7 +483,7 @@ fn arg_references_receiver(arg_src: &str, receiver: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::tester::{TestCase, Tester};
+    use crate::tester::{ExpectFixTestCase, TestCase, Tester};
 
     use super::*;
 
@@ -523,6 +608,80 @@ mod tests {
             ("(foo).push(1); foo.push(2);", "(foo).push(1, 2);"),
             ("foo.push(1); (foo).push(2);", "foo.push(1, 2);"),
         ];
+
+        // `--fix` merges `push()` and `unshift()` calls only on a receiver
+        // known to be an array.
+        let safe_fix = [
+            ("const foo = []; foo.push(1); foo.push(2);", "const foo = []; foo.push(1, 2);"),
+            ("let foo = []; foo.push(1); foo.push(2);", "let foo = []; foo.push(1, 2);"),
+            (
+                "const foo = new Array(); foo.push(1); foo.push(2);",
+                "const foo = new Array(); foo.push(1, 2);",
+            ),
+            (
+                "const foo = Array(); foo.push(1); foo.push(2);",
+                "const foo = Array(); foo.push(1, 2);",
+            ),
+            (
+                "const foo = Array.from(x); foo.push(1); foo.push(2);",
+                "const foo = Array.from(x); foo.push(1, 2);",
+            ),
+            (
+                "const foo = Array.of(); foo.push(1); foo.push(2);",
+                "const foo = Array.of(); foo.push(1, 2);",
+            ),
+            (
+                "let foo: number[] = get(); foo = get(); foo.push(1); foo.push(2);",
+                "let foo: number[] = get(); foo = get(); foo.push(1, 2);",
+            ),
+            (
+                "function f(foo: Array<number>) { foo.push(1); foo.push(2); }",
+                "function f(foo: Array<number>) { foo.push(1, 2); }",
+            ),
+            (
+                "const foo = []; foo.unshift(1); foo.unshift(2);",
+                "const foo = []; foo.unshift(2, 1);",
+            ),
+            (
+                "el.classList.add('foo'); el.classList.add('bar');",
+                "el.classList.add('foo', 'bar');",
+            ),
+            ("importScripts('a.js'); importScripts('b.js');", "importScripts('a.js', 'b.js');"),
+        ];
+
+        // Any other receiver may have a `push()` that takes one argument, such
+        // as a stream's, so merging is only a suggestion.
+        let suggestion_only = [
+            "const source = server.latest(); source.push(a); source.push(b);",
+            "foo.push(1); foo.push(2);",
+            "foo.unshift(1); foo.unshift(2);",
+            "this.arr.push(1); this.arr.push(2);",
+            "function f(foo) { foo.push(1); foo.push(2); }",
+            "function f(foo: Stream) { foo.push(1); foo.push(2); }",
+            "let foo = []; foo = stream; foo.push(1); foo.push(2);",
+            "const [foo] = [[]]; foo.push(1); foo.push(2);",
+            "const Array = Stream; const foo = new Array(); foo.push(1); foo.push(2);",
+            "type Array<T> = Stream<T>; const foo: Array<number> = s; foo.push(1); foo.push(2);",
+        ];
+
+        let mut fix = fix.into_iter().map(ExpectFixTestCase::from).collect::<Vec<_>>();
+        fix.extend(
+            safe_fix
+                .into_iter()
+                .map(|(source, expected)| (source, expected, None, FixKind::SafeFix).into()),
+        );
+        fix.extend(
+            suggestion_only
+                .into_iter()
+                .map(|source| (source, source, None, FixKind::SafeFix).into()),
+        );
+        fix.extend([(
+            "const source = server.latest(); source.push(a); source.push(b);",
+            "const source = server.latest(); source.push(a, b);",
+            None,
+            FixKind::Suggestion,
+        )
+            .into()]);
 
         let mut pass = pass.into_iter().map(TestCase::from).collect::<Vec<_>>();
         pass.extend([
