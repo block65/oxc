@@ -12,7 +12,7 @@ cut from tags, described below.
 
 ## Where the changes are
 
-`crates/oxc_linter/src/rules/typescript/` holds the four added rules and the
+`crates/oxc_linter/src/rules/typescript/` holds the five added rules and the
 changed `no-inferrable-types`. `crates/oxc_linter/src/rules/unicorn/` holds
 `prefer-single-call`, `no-typeof-undefined` and `no-useless-undefined`, whose
 autofixes are narrowed. `npm/oxlint/README.md` describes all of them. The added rules are stubs, implemented in
