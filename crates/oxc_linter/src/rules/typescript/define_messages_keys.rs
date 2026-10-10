@@ -7,7 +7,9 @@ pub struct DefineMessagesKeys;
 declare_oxc_lint!(
     /// ### What it does
     ///
-    /// Require an explicit finite string-literal key type for defineMessages.
+    /// Require a finite key type for defineMessages: a union of string or number literals.
+    /// A call with no type argument passes when it resolves to an overload with a `const`
+    /// type parameter, such as react-intl 12's, which already keeps the literal keys.
     ///
     /// ### Why is this bad?
     ///
@@ -19,10 +21,6 @@ declare_oxc_lint!(
     /// Examples of **incorrect** code for this rule:
     /// ```ts
     /// import { defineMessages } from 'react-intl';
-    ///
-    /// const messages = defineMessages({
-    ///   greeting: { id: 'greeting' },
-    /// });
     ///
     /// const otherMessages = defineMessages<string>({
     ///   greeting: { id: 'greeting' },
@@ -42,7 +40,7 @@ declare_oxc_lint!(
     typescript,
     restriction,
     version = "1.82.0",
-    short_description = "Require an explicit finite string-literal key type for defineMessages.",
+    short_description = "Require a finite literal key type for defineMessages.",
 );
 
 impl Rule for DefineMessagesKeys {}
