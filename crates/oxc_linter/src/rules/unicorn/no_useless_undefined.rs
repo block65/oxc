@@ -76,6 +76,14 @@ declare_oxc_lint!(
     /// let foo;
     /// const noop = () => {};
     /// ```
+    ///
+    /// ### Fixes
+    ///
+    /// In TypeScript, removing `undefined` from a `return` statement, an arrow
+    /// function body or a call's arguments can change types: `() => undefined`
+    /// is inferred to return `undefined` but `() => {}` to return `void`, and a
+    /// call that drops an argument may no longer match its signature. Those
+    /// fixes are suggestions in TypeScript files.
     NoUselessUndefined,
     unicorn,
     pedantic,
@@ -161,6 +169,11 @@ fn has_non_void_return_type(node: &AstNode, ctx: &LintContext<'_>) -> bool {
     })
 }
 
+/// The kind of fix for a removal that can change TypeScript types.
+fn type_changing_fix_kind(ctx: &LintContext<'_>) -> FixKind {
+    if ctx.source_type().is_typescript() { FixKind::Suggestion } else { FixKind::SafeFix }
+}
+
 impl Rule for NoUselessUndefined {
     fn from_configuration(value: serde_json::Value) -> Result<Self, serde_json::error::Error> {
         DefaultRuleConfig::<Self>::from_value(value).map(DefaultRuleConfig::into_inner)
@@ -239,8 +252,9 @@ impl Rule for NoUselessUndefined {
                         if has_non_void_return_type(parent_node, ctx) {
                             return;
                         }
-                        ctx.diagnostic_with_fix(
+                        ctx.diagnostic_with_fix_of_kind(
                             no_useless_undefined_diagnostic(undefined_literal.span),
+                            type_changing_fix_kind(ctx),
                             |fixer| {
                                 let delete_span = if let Some(comment) = ctx
                                     .comments_range(ret_stmt.span.start..undefined_span.start)
@@ -282,8 +296,9 @@ impl Rule for NoUselessUndefined {
                             return;
                         }
 
-                        ctx.diagnostic_with_fix(
+                        ctx.diagnostic_with_fix_of_kind(
                             no_useless_undefined_diagnostic(undefined_literal.span),
+                            type_changing_fix_kind(ctx),
                             |fixer| {
                                 if ctx.has_comments_between(arrow.body.span()) {
                                     return fixer.noop();
@@ -470,8 +485,9 @@ impl Rule for NoUselessUndefined {
                 }
 
                 let delete_span = Span::new(start, end);
-                ctx.diagnostic_with_fix(
+                ctx.diagnostic_with_fix_of_kind(
                     no_useless_undefined_diagnostic_spans(undefined_args_spans),
+                    type_changing_fix_kind(ctx),
                     |fixer| {
                         if ctx.has_comments_between(delete_span) {
                             return fixer.noop();
@@ -1638,6 +1654,70 @@ fn test_complete_fix_ranges() {
     let fail = cases.iter().map(|(source, _)| *source).collect();
     let fix = cases.into_iter().map(|(source, output)| (source, output, None)).collect();
     Tester::new(NoUselessUndefined::NAME, NoUselessUndefined::PLUGIN, pass, fail)
+        .expect_fix(fix)
+        .test();
+}
+
+#[test]
+fn test_typescript_fix_kinds() {
+    use crate::tester::{ExpectFixTestCase, Tester};
+
+    // Removing `undefined` here can change TypeScript types: an inferred
+    // return type becomes `void`, or a call no longer matches its signature.
+    let type_changing = [
+        ("function foo() {return undefined;}", "function foo() {return;}"),
+        ("const foo = () => undefined;", "const foo = () => {};"),
+        (
+            "const options = Object.freeze({ render: () => undefined });",
+            "const options = Object.freeze({ render: () => {} });",
+        ),
+        ("foo(undefined);", "foo();"),
+    ];
+    // These removals leave TypeScript types unchanged.
+    let type_preserving = [
+        ("function* foo() {yield undefined;}", "function* foo() {yield;}"),
+        ("let a = undefined;", "let a;"),
+    ];
+    // Upstream withholds this fix in TypeScript, where the default can widen the binding.
+    let destructuring = ("const {foo = undefined} = bar;", "const {foo} = bar;");
+
+    let pass: Vec<&str> = vec![];
+    let fail = type_changing
+        .iter()
+        .chain(&type_preserving)
+        .chain([&destructuring])
+        .map(|(source, _)| *source)
+        .collect();
+
+    let mut fix: Vec<ExpectFixTestCase> = vec![];
+    for (source, expected) in type_changing {
+        fix.push((source, source, None, FixKind::SafeFix).into());
+        fix.push((source, expected, None, FixKind::Suggestion).into());
+    }
+    for (source, expected) in type_preserving {
+        fix.push((source, expected, None, FixKind::SafeFix).into());
+    }
+    fix.push((destructuring.0, destructuring.0, None, FixKind::SafeFix).into());
+    Tester::new(NoUselessUndefined::NAME, NoUselessUndefined::PLUGIN, pass.clone(), fail)
+        .change_rule_path_extension("ts")
+        .expect_fix(fix)
+        .test();
+
+    // JavaScript has no types to change, so every removal is a safe fix.
+    let fail = type_changing
+        .iter()
+        .chain(&type_preserving)
+        .chain([&destructuring])
+        .map(|(source, _)| *source)
+        .collect();
+    let fix: Vec<ExpectFixTestCase> = type_changing
+        .into_iter()
+        .chain(type_preserving)
+        .chain([destructuring])
+        .map(|(source, expected)| (source, expected, None, FixKind::SafeFix).into())
+        .collect();
+    Tester::new(NoUselessUndefined::NAME, NoUselessUndefined::PLUGIN, pass, fail)
+        .change_rule_path_extension("js")
         .expect_fix(fix)
         .test();
 }
