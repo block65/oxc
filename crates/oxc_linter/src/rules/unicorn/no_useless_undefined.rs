@@ -1,7 +1,11 @@
 use oxc_ast::{
     AstKind,
-    ast::{Argument, CallExpression, Expression, VariableDeclarationKind},
+    ast::{
+        Argument, ArrowFunctionBody, ArrowFunctionExpression, CallExpression, Expression, Function,
+        ReturnStatement, VariableDeclarationKind,
+    },
 };
+use oxc_ast_visit::VisitJs;
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_span::{GetSpan, Span};
@@ -171,6 +175,51 @@ fn is_has_function_return_type(node: &AstNode, ctx: &LintContext<'_>) -> bool {
     }
 }
 
+/// Returns `true` when the function enclosing `node` also returns a value other than
+/// `undefined`. TypeScript's `noImplicitReturns` then needs every path to return explicitly,
+/// and `return undefined` says so more plainly than `return;`.
+fn has_value_return_sibling(node: &AstNode, ctx: &LintContext<'_>) -> bool {
+    let Some(function) = ctx.nodes().ancestors(node.id()).find(|ancestor| {
+        matches!(ancestor.kind(), AstKind::Function(_) | AstKind::ArrowFunctionExpression(_))
+    }) else {
+        return false;
+    };
+    let body = match function.kind() {
+        AstKind::Function(func) => func.body.as_deref(),
+        AstKind::ArrowFunctionExpression(arrow) => match &arrow.body {
+            ArrowFunctionBody::FunctionBody(body) => Some(&**body),
+            _ => None,
+        },
+        _ => None,
+    };
+    let Some(body) = body else {
+        return false;
+    };
+    let mut finder = ValueReturnFinder { found: false };
+    finder.visit_function_body(body);
+    finder.found
+}
+
+struct ValueReturnFinder {
+    found: bool,
+}
+
+impl<'a> VisitJs<'a> for ValueReturnFinder {
+    fn visit_return_statement(&mut self, it: &ReturnStatement<'a>) {
+        if it
+            .argument
+            .as_ref()
+            .is_some_and(|argument| !argument.get_inner_expression().is_undefined())
+        {
+            self.found = true;
+        }
+    }
+
+    fn visit_function(&mut self, _it: &Function<'a>, _flags: oxc_semantic::ScopeFlags) {}
+
+    fn visit_arrow_function_expression(&mut self, _it: &ArrowFunctionExpression<'a>) {}
+}
+
 /// The kind of fix for a removal that can change TypeScript types.
 fn type_changing_fix_kind(ctx: &LintContext<'_>) -> FixKind {
     if ctx.source_type().is_typescript() { FixKind::Suggestion } else { FixKind::SafeFix }
@@ -195,6 +244,11 @@ impl Rule for NoUselessUndefined {
                     // `return undefined`
                     AstKind::ReturnStatement(ret_stmt) => {
                         if is_has_function_return_type(parent_node, ctx) {
+                            return;
+                        }
+                        if ctx.source_type().is_typescript()
+                            && has_value_return_sibling(parent_node, ctx)
+                        {
                             return;
                         }
                         ctx.diagnostic_with_fix_of_kind(
@@ -876,6 +930,48 @@ fn test_typescript_fix_kinds() {
         .map(|(source, expected)| (source, expected, None, FixKind::SafeFix).into())
         .collect();
     Tester::new(NoUselessUndefined::NAME, NoUselessUndefined::PLUGIN, pass, fail)
+        .change_rule_path_extension("js")
+        .expect_fix(fix)
+        .test();
+}
+
+#[test]
+fn test_typescript_value_returns() {
+    use crate::tester::{ExpectFixTestCase, Tester};
+
+    // Under `noImplicitReturns`, a function that returns a value on one path
+    // must return explicitly on every other path.
+    let pass = vec![
+        "function find(key) { if (key) return map.get(key); return undefined; }",
+        "const find = (key) => { if (key) { return 1; } return undefined; };",
+        "class A { get value() { if (this.x) return this.x; return undefined; } }",
+    ];
+    // Only the enclosing function's own returns count.
+    let fail = vec![
+        "function f() { const g = () => { return 1; }; return undefined; }",
+        "function f(x) { if (x) return undefined; return undefined; }",
+    ];
+    let fix: Vec<ExpectFixTestCase> =
+        fail.iter().map(|source| (*source, *source, None, FixKind::SafeFix).into()).collect();
+    Tester::new(NoUselessUndefined::NAME, NoUselessUndefined::PLUGIN, pass.clone(), fail.clone())
+        .change_rule_path_extension("ts")
+        .expect_fix(fix)
+        .test();
+
+    // JavaScript has no `noImplicitReturns`.
+    let js_fix = [
+        (pass[0], "function find(key) { if (key) return map.get(key); return; }"),
+        (pass[1], "const find = (key) => { if (key) { return 1; } return; };"),
+        (pass[2], "class A { get value() { if (this.x) return this.x; return; } }"),
+        (fail[0], "function f() { const g = () => { return 1; }; return; }"),
+        (fail[1], "function f(x) { if (x) return; return; }"),
+    ];
+    let fail: Vec<&str> = js_fix.iter().map(|(source, _)| *source).collect();
+    let fix: Vec<ExpectFixTestCase> = js_fix
+        .into_iter()
+        .map(|(source, expected)| (source, expected, None, FixKind::SafeFix).into())
+        .collect();
+    Tester::new(NoUselessUndefined::NAME, NoUselessUndefined::PLUGIN, vec![], fail)
         .change_rule_path_extension("js")
         .expect_fix(fix)
         .test();
