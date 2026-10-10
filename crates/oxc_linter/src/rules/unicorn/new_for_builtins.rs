@@ -3,7 +3,6 @@ use oxc_diagnostics::OxcDiagnostic;
 use oxc_macros::declare_oxc_lint;
 use oxc_span::Span;
 use oxc_str::JSStr;
-use oxc_syntax::operator::BinaryOperator;
 
 use crate::{
     AstNode, context::LintContext, globals::GLOBAL_OBJECT_NAMES, rule::Rule,
@@ -88,14 +87,10 @@ impl Rule for NewForBuiltins {
                 };
 
                 if ENFORCE_NEW_FOR_BUILTINS.contains(builtin_name) {
-                    if builtin_name == "Object" {
-                        let parent_kind = ctx.nodes().parent_kind(node.id());
-                        if let AstKind::BinaryExpression(bin_expr) = parent_kind
-                            && (bin_expr.operator == BinaryOperator::StrictEquality
-                                || bin_expr.operator == BinaryOperator::StrictInequality)
-                        {
-                            return;
-                        }
+                    // `Object(value)` converts its argument, and TypeScript types it as `any`.
+                    // `new Object(value)` is typed as `Object`, so only `Object()` is reported.
+                    if builtin_name == "Object" && !call_expr.arguments.is_empty() {
+                        return;
                     }
 
                     // `Date()` returns a string representation of the current date and time, exactly as `new Date().toString()` does.
@@ -233,6 +228,8 @@ fn test() {
         "const isObject = v => Object(v) === v;",
         "const isObject = v => globalThis.Object(v) === v;",
         "(x) !== Object(x)",
+        "const object = Object(value);",
+        "const view = typeof value === 'object' ? value : Object(value);",
         // r#"new Symbol("")"#, // {"globals": {"Symbol": "off"}},
         "const foo = new Date();",
         "function f(MyString) { const String = MyString; return new String('x') }; String(1)",
