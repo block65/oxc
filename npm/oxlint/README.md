@@ -1,6 +1,6 @@
 # @block65/oxlint
 
-oxlint with four added type-aware rules and four changed upstream rules. The
+oxlint with four added type-aware rules and seven changed upstream rules. The
 four added rules are implemented in @block65/oxlint-tsgolint, and `package.json` declares the
 oldest build of it they work with as an optional peer dependency on
 `oxlint-tsgolint`. Linux x64 and arm64 only, the platforms Block65 runs. The
@@ -20,8 +20,10 @@ All four are `typescript/` rules in the `restriction` category. They run in
 tsgolint, so they need `--type-aware`. Each reports a place where a finite
 type is erased.
 
-- `define-messages-keys`: `defineMessages` called without an explicit
-  string-literal union as its type argument.
+- `define-messages-keys`: `defineMessages` whose keys are not a finite union
+  of string or number literals. A call with no type argument passes when it
+  resolves to an overload with a `const` type parameter, as react-intl 12's
+  does, since that already keeps the literal keys.
 - `no-widening-alias`: a `const` whose annotation is wider than its
   initializer, such as `string` over a literal union or `Record<string, T>`
   over an object with known keys.
@@ -61,6 +63,19 @@ offered as a suggestion instead, which `--fix-suggestions` applies:
   type from `undefined` to `void`; a parameter's `= undefined` default, which
   makes the parameter required; and trailing `undefined` arguments, which can
   leave a call short of a required parameter.
+
+Four `unicorn/` rules report less than they do upstream:
+
+- `new-for-builtins` reports `Object()` but not `Object(value)`, a conversion
+  TypeScript types as `any`, while `new Object(value)` is typed `Object`.
+- `prefer-math-trunc` does not report an integer literal shifted left by zero,
+  such as `1 << 0` at the start of a bit-flag sequence.
+- `explicit-length-check` does not report `.length` or `.size` before `||`
+  with a string fallback, such as `props.size || "base"`, where the property
+  is a string.
+- `no-useless-undefined` does not report `return undefined` in a TypeScript
+  function that also returns a value. Under `noImplicitReturns` every path
+  must then return explicitly.
 
 ## Versioning
 
