@@ -1,7 +1,7 @@
 # @block65/oxlint
 
-oxlint with four added type-aware rules and one changed upstream rule. The four
-are implemented in @block65/oxlint-tsgolint, and `package.json` declares the
+oxlint with four added type-aware rules and four changed upstream rules. The
+four added rules are implemented in @block65/oxlint-tsgolint, and `package.json` declares the
 oldest build of it they work with as an optional peer dependency on
 `oxlint-tsgolint`. Linux x64 and arm64 only, the platforms Block65 runs. The
 package version names the upstream release it is built on, as described under
@@ -32,7 +32,7 @@ type is erased.
   returns, such as `boolean` over `return true`. Option `contracts` (default
   `true`) allows a named object type as the annotation.
 
-## Changed rule
+## Changed rules
 
 `typescript/no-inferrable-types` reports a primitive annotation it considers
 redundant and suggests deleting it. On a `const` holding a literal the
@@ -44,6 +44,23 @@ In this build the rule stops reporting that case for `number`, `string`,
 `boolean` and `bigint`. It still reports `const a: 5 = 5`, where the
 annotation matches what inference already gives, and `let`, `var`, parameters
 and properties, which widen on their own.
+
+Three `unicorn/` rules report what they did upstream, but `--fix` applies
+fewer of their rewrites. Where a rewrite can change behaviour or types, it is
+offered as a suggestion instead, which `--fix-suggestions` applies:
+
+- `prefer-single-call` merges `push()` and `unshift()` calls only on a
+  variable known to be an array: annotated `T[]` or `Array<T>`, or
+  initialised with an array and never reassigned. Any other receiver may have
+  a `push()` that takes one argument, such as a stream's.
+- `no-typeof-undefined` does not rewrite inside a generic function or class.
+  `typeof value === "undefined"` narrows a value of an unconstrained type
+  parameter to `undefined`, and `value === undefined` does not.
+- `no-useless-undefined` does not rewrite these in TypeScript files:
+  `return undefined` and `() => undefined`, which change an inferred return
+  type from `undefined` to `void`; a parameter's `= undefined` default, which
+  makes the parameter required; and trailing `undefined` arguments, which can
+  leave a call short of a required parameter.
 
 ## Versioning
 
