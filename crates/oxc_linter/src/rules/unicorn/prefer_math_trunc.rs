@@ -99,6 +99,15 @@ impl Rule for PreferMathTrunc {
                     return;
                 }
 
+                // An integer literal has nothing to truncate: `1 << 0` is a bit-flag position
+                // lined up with `1 << 1`, `1 << 2` and so on.
+                if bin_expr.operator == BinaryOperator::ShiftLeft
+                    && let Expression::NumericLiteral(left_num_lit) = &bin_expr.left
+                    && left_num_lit.value.fract() == 0.0
+                {
+                    return;
+                }
+
                 (bin_expr.operator.as_str(), bin_expr.left.span(), false, false)
             }
             AstKind::AssignmentExpression(assignment_expr) => {
@@ -199,6 +208,7 @@ fn test() {
         "const foo = 1.1 >> 1",
         "const foo = 1.1 >>> 0",
         "const foo = 0 << 1",
+        "const execute = 1 << 0; const write = 1 << 1;",
         "let foo = 0;
             foo |= 1;",
         "let foo = 1.1;
@@ -210,6 +220,7 @@ fn test() {
     let fail = vec![
         "const foo = 1.1 | 0;",
         "const foo = 111 | 0;",
+        "const foo = 1.5 << 0;",
         "const foo = (1 + 2 / 3.4) | 0;",
         "const foo = bar((1.4 | 0) + 2);",
         "const foo = (0, 1.4) | 0;",
