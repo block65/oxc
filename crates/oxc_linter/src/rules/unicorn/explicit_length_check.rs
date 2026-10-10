@@ -293,7 +293,14 @@ impl Rule for ExplicitLengthCheck {
                     AstKind::LogicalExpression(LogicalExpression { operator, right, .. })
                         if *operator == LogicalOperator::And
                             || (*operator == LogicalOperator::Or
-                                && !matches!(right, Expression::NumericLiteral(_))) =>
+                                // A number fallback keeps the result a count. A string fallback
+                                // shows the property is a string, such as a `size` prop.
+                                && !matches!(
+                                    right,
+                                    Expression::NumericLiteral(_)
+                                        | Expression::StringLiteral(_)
+                                        | Expression::TemplateLiteral(_)
+                                )) =>
                     {
                         self.report(ctx, ancestor, is_negative, static_member_expr, false);
                     }
@@ -325,6 +332,8 @@ fn test() {
         ("const x = NotBoolean(foo.length)", None),
         ("const length = foo.length ?? 0", None),
         ("if (foo.length ?? bar) {}", None),
+        (r#"const size = picked.size || "base""#, None),
+        ("const label = foo.length || `none`", None),
         // Checking 'non-zero'
         ("if (foo.length > 0) {}", None),
         ("if (foo.length > 0) {}", Some(serde_json::json!([{"non-zero": "greater-than"}]))),
