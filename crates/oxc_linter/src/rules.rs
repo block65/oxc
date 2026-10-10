@@ -282,6 +282,7 @@ pub(crate) mod typescript {
     pub mod no_non_null_asserted_nullish_coalescing;
     pub mod no_non_null_asserted_optional_chain;
     pub mod no_non_null_assertion;
+    pub mod no_open_string_fallback;
     pub mod no_redundant_type_constituents;
     pub mod no_require_imports;
     pub mod no_restricted_types;

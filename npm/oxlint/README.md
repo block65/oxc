@@ -1,7 +1,7 @@
 # @block65/oxlint
 
-oxlint with four added type-aware rules and eight changed upstream rules. The
-four added rules are implemented in @block65/oxlint-tsgolint, and `package.json` declares the
+oxlint with five added type-aware rules and eight changed upstream rules. The
+five added rules are implemented in @block65/oxlint-tsgolint, and `package.json` declares the
 oldest build of it they work with as an optional peer dependency on
 `oxlint-tsgolint`. Linux x64 and arm64 only, the platforms Block65 runs. The
 package version names the upstream release it is built on, as described under
@@ -16,14 +16,20 @@ overrides:
 
 ## Added rules
 
-All four are `typescript/` rules in the `restriction` category. They run in
-tsgolint, so they need `--type-aware`. Each reports a place where a finite
-type is erased.
+All five are `typescript/` rules in the `restriction` category. They run in
+tsgolint, so they need `--type-aware`. Four report a place where a finite
+type is erased, and one a value invented where a finite type would have
+named the choice.
 
 - `define-messages-keys`: `defineMessages` whose keys are not a finite union
   of string or number literals. A call with no type argument passes when it
   resolves to an overload with a `const` type parameter, as react-intl 12's
   does, since that already keeps the literal keys.
+- `no-open-string-fallback`: an inline string literal after `??` or `??=`,
+  or as a destructuring default outside a parameter, where the operand is an
+  open `string` or a literal union the value is outside. A member of the
+  union chooses a default and a named value is a typed default, so both
+  pass. The empty string is left to the block65 plugin's `no-sentinel-fallback`.
 - `no-widening-alias`: a `const` whose annotation is wider than its
   initializer, such as `string` over a literal union or `Record<string, T>`
   over an object with known keys.
