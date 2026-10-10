@@ -47,6 +47,15 @@ declare_oxc_lint!(
     /// ```javascript
     /// foo === undefined;
     /// ```
+    ///
+    /// ### Fixes
+    ///
+    /// The fix is a suggestion rather than a safe fix where the variable may be
+    /// an undeclared global, as `foo === undefined` throws a `ReferenceError`
+    /// for one. In TypeScript, it is also a suggestion inside a generic
+    /// function or class: `typeof value === "undefined"` narrows a value of an
+    /// unconstrained type parameter `T` to `undefined`, and
+    /// `value === undefined` does not, so the fix can introduce type errors.
     NoTypeofUndefined,
     unicorn,
     pedantic,
@@ -90,7 +99,7 @@ impl Rule for NoTypeofUndefined {
             return;
         }
 
-        if is_global_variable {
+        if is_global_variable || in_generic_scope(node, ctx) {
             ctx.diagnostic_with_suggestion(
                 no_typeof_undefined_diagnostic(bin_expr.span),
                 |fixer| {
@@ -117,6 +126,17 @@ fn is_global_variable<'a>(ident: &Expression<'a>, ctx: &LintContext<'a>) -> bool
     get_declaration_of_variable(ident, ctx).is_none()
 }
 
+/// Returns `true` if `node` is inside a function or class that declares type
+/// parameters, where an operand's type may be a type parameter.
+fn in_generic_scope(node: &AstNode<'_>, ctx: &LintContext<'_>) -> bool {
+    ctx.nodes().ancestor_kinds(node.id()).any(|kind| match kind {
+        AstKind::Function(func) => func.type_parameters.is_some(),
+        AstKind::ArrowFunctionExpression(arrow) => arrow.type_parameters.is_some(),
+        AstKind::Class(class) => class.type_parameters.is_some(),
+        _ => false,
+    })
+}
+
 fn generate_fix<'a>(
     fixer: RuleFixer<'_, 'a>,
     argument: &Expression<'a>,
@@ -135,7 +155,10 @@ fn generate_fix<'a>(
 
 #[test]
 fn test() {
-    use crate::tester::Tester;
+    use crate::{
+        fixer::FixKind,
+        tester::{ExpectFixTestCase, Tester},
+    };
 
     let pass = vec![
         (r"typeof a.b", None),
@@ -198,6 +221,38 @@ fn test() {
             Some(serde_json::json!([{ "checkGlobalVariables": true }])),
         ),
     ];
+
+    let mut fix = fix.into_iter().map(ExpectFixTestCase::from).collect::<Vec<_>>();
+    // Inside a generic function or class, `x === undefined` may not narrow `x`
+    // as `typeof x === "undefined"` does, so the fix is only a suggestion.
+    let generic = [
+        "function f<T>(val: T) { return typeof val === 'undefined' ? val : String(val); }",
+        "const f = <T,>(val: T) => typeof val !== 'undefined';",
+        "function f<T>(o: { v: T }) { return typeof o.v === 'undefined'; }",
+        "class C<T> { m(val: T) { return typeof val === 'undefined'; } }",
+        "function f<T>(val: T) { return () => typeof val === 'undefined'; }",
+        "const o = { m<T>(val: T) { return typeof val === 'undefined'; } };",
+    ];
+    for source in generic {
+        fix.push((source, source, None, FixKind::SafeFix).into());
+    }
+    fix.extend([
+        (
+            "function f<T>(val: T) { return typeof val === 'undefined' ? val : String(val); }",
+            "function f<T>(val: T) { return val === undefined ? val : String(val); }",
+            None,
+            FixKind::Suggestion,
+        )
+            .into(),
+        // Outside a generic scope, the fix stays safe.
+        (
+            "function f(val: unknown) { return typeof val === 'undefined'; }",
+            "function f(val: unknown) { return val === undefined; }",
+            None,
+            FixKind::SafeFix,
+        )
+            .into(),
+    ]);
 
     Tester::new(NoTypeofUndefined::NAME, NoTypeofUndefined::PLUGIN, pass, fail)
         .expect_fix(fix)
