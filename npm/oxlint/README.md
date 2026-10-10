@@ -1,6 +1,6 @@
 # @block65/oxlint
 
-oxlint with four added type-aware rules and seven changed upstream rules. The
+oxlint with four added type-aware rules and eight changed upstream rules. The
 four added rules are implemented in @block65/oxlint-tsgolint, and `package.json` declares the
 oldest build of it they work with as an optional peer dependency on
 `oxlint-tsgolint`. Linux x64 and arm64 only, the platforms Block65 runs. The
@@ -76,6 +76,10 @@ Four `unicorn/` rules report less than they do upstream:
 - `no-useless-undefined` does not report `return undefined` in a TypeScript
   function that also returns a value. Under `noImplicitReturns` every path
   must then return explicitly.
+
+`unicorn/number-literal-case` takes upstream unicorn's `hexadecimalValue`
+option, `"uppercase"` (the default) or `"lowercase"`. oxfmt lower-cases hex
+digits, so `["error", { "hexadecimalValue": "lowercase" }]` agrees with it.
 
 ## Versioning
 

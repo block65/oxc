@@ -9352,7 +9352,24 @@
           "$ref": "#/definitions/RuleNoConfig"
         },
         "unicorn/number-literal-case": {
-          "$ref": "#/definitions/RuleNoConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RuleNoConfig"
+            },
+            {
+              "type": "array",
+              "items": [
+                {
+                  "$ref": "#/definitions/AllowWarnDeny"
+                },
+                {
+                  "$ref": "#/definitions/NumberLiteralCase"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          ]
         },
         "unicorn/numeric-separators-style": {
           "anyOf": [
@@ -11689,6 +11706,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "HexadecimalValue": {
+      "type": "string",
+      "enum": [
+        "uppercase",
+        "lowercase"
+      ]
     },
     "HoistOption": {
       "description": "Controls how hoisting is handled when checking for shadowing.",
@@ -16615,6 +16639,21 @@
           "markdownDescription": "Ignore null comparisons, allow either `== null`/`!= null` or `=== null`/`!== null`."
         }
       ]
+    },
+    "NumberLiteralCase": {
+      "type": "object",
+      "properties": {
+        "hexadecimalValue": {
+          "description": "The case to enforce for hexadecimal digits.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/HexadecimalValue"
+            }
+          ],
+          "markdownDescription": "The case to enforce for hexadecimal digits."
+        }
+      },
+      "additionalProperties": false
     },
     "NumericNumberConfig": {
       "type": "object",

@@ -395,6 +395,7 @@ export type ModuleStylesOverride =
       unassigned?: boolean;
     };
 export type NoInstanceofBuiltinsStrategy = "strict" | "loose";
+export type HexadecimalValue = "uppercase" | "lowercase";
 export type PreferTernaryOption = "always" | "only-single-line";
 export type RelativeUrlStyleConfig = "never" | "always";
 export type SwitchCaseBracesConfig = "always" | "avoid";
@@ -1611,7 +1612,7 @@ export interface DummyRuleMap {
   "unicorn/no-useless-switch-case"?: RuleNoConfig;
   "unicorn/no-useless-undefined"?: RuleNoConfig | [AllowWarnDeny, NoUselessUndefined];
   "unicorn/no-zero-fractions"?: RuleNoConfig;
-  "unicorn/number-literal-case"?: RuleNoConfig;
+  "unicorn/number-literal-case"?: RuleNoConfig | [AllowWarnDeny, NumberLiteralCase];
   "unicorn/numeric-separators-style"?: RuleNoConfig | [AllowWarnDeny, NumericSeparatorsStyleConfig];
   "unicorn/prefer-add-event-listener"?: RuleNoConfig;
   "unicorn/prefer-array-find"?: RuleNoConfig;
@@ -2113,6 +2114,7 @@ export interface DummyRuleMap {
     | [AllowWarnDeny, NoTypeofUndefined]
     | [AllowWarnDeny, NoUselessPromiseResolveRejectOptions]
     | [AllowWarnDeny, NoUselessUndefined]
+    | [AllowWarnDeny, NumberLiteralCase]
     | [AllowWarnDeny, NumericSeparatorsStyleConfig]
     | [AllowWarnDeny, PreferAtConfig]
     | [AllowWarnDeny, PreferExportFrom]
@@ -6875,6 +6877,12 @@ export interface NoUselessUndefined {
    * Whether to check for useless `undefined` in arrow function bodies.
    */
   checkArrowFunctionBody?: boolean;
+}
+export interface NumberLiteralCase {
+  /**
+   * The case to enforce for hexadecimal digits.
+   */
+  hexadecimalValue?: HexadecimalValue;
 }
 export interface NumericSeparatorsStyleConfig {
   /**

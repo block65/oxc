@@ -122,3 +122,59 @@ source: crates/oxc_linter/src/tester.rs
    ·                                     ────────────
    ╰────
   help: Use lowercase for the number literal prefix `0x` and uppercase for hexadecimal digits.
+
+  ⚠ unicorn(number-literal-case): Unexpected hexadecimal digits in uppercase.
+   ╭─[number_literal_case.tsx:1:15]
+ 1 │ const foo = 0xABCDEF
+   ·               ──────
+   ╰────
+  help: Use lowercase for hexadecimal digits.
+
+  ⚠ unicorn(number-literal-case): Unexpected number literal prefix in uppercase and hexadecimal digits in uppercase.
+   ╭─[number_literal_case.tsx:1:13]
+ 1 │ const foo = 0XaBcDeF
+   ·             ────────
+   ╰────
+  help: Use lowercase for the number literal prefix `0x` and lowercase for hexadecimal digits.
+
+  ⚠ unicorn(number-literal-case): Unexpected number literal prefix in uppercase and hexadecimal digits in uppercase.
+   ╭─[number_literal_case.tsx:1:13]
+ 1 │ const foo = 0XaBcDeFn
+   ·             ─────────
+   ╰────
+  help: Use lowercase for the number literal prefix `0x` and lowercase for hexadecimal digits.
+
+  ⚠ unicorn(number-literal-case): Unexpected number literal prefix in uppercase and hexadecimal digits in uppercase.
+   ╭─[number_literal_case.tsx:1:13]
+ 1 │ const foo = 0XABCDEF
+   ·             ────────
+   ╰────
+  help: Use lowercase for the number literal prefix `0x` and lowercase for hexadecimal digits.
+
+  ⚠ unicorn(number-literal-case): Unexpected hexadecimal digits in uppercase.
+   ╭─[number_literal_case.tsx:1:15]
+ 1 │ const foo = 0xdeED_BEEFn
+   ·               ──────────
+   ╰────
+  help: Use lowercase for hexadecimal digits.
+
+  ⚠ unicorn(number-literal-case): Unexpected number literal prefix in uppercase.
+   ╭─[number_literal_case.tsx:1:14]
+ 1 │ const foo = 0B10
+   ·              ─
+   ╰────
+  help: Use lowercase for the number literal prefix `0b`.
+
+  ⚠ unicorn(number-literal-case): Unexpected exponential notation in uppercase.
+   ╭─[number_literal_case.tsx:1:16]
+ 1 │ const foo = 1.2E3
+   ·                ─
+   ╰────
+  help: Use lowercase for `e` in exponential notations.
+
+  ⚠ unicorn(number-literal-case): Unexpected hexadecimal digits in lowercase.
+   ╭─[number_literal_case.tsx:1:15]
+ 1 │ const foo = 0xabcdef
+   ·               ──────
+   ╰────
+  help: Use uppercase for hexadecimal digits.
