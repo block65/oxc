@@ -1473,6 +1473,7 @@ export interface DummyRuleMap {
   "typescript/no-non-null-asserted-nullish-coalescing"?: RuleNoConfig;
   "typescript/no-non-null-asserted-optional-chain"?: RuleNoConfig;
   "typescript/no-non-null-assertion"?: RuleNoConfig;
+  "typescript/no-open-string-fallback"?: RuleNoConfig;
   "typescript/no-redundant-type-constituents"?: RuleNoConfig;
   "typescript/no-require-imports"?: RuleNoConfig | [AllowWarnDeny, NoRequireImportsConfig];
   "typescript/no-restricted-types"?: RuleNoConfig | [AllowWarnDeny, NoRestrictedTypesConfig];
