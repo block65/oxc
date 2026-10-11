@@ -32,6 +32,9 @@ overrides:
   rolldown: "catalog:"
   vite: "catalog:"
   emnapi: "catalog:"
+  # the fork's own install resolves @block65/oxlint's peer floor, which the
+  # upstream oxlint-tsgolint package never reaches
+  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.200303
 
 allowBuilds:
   "@vscode/vsce-sign@2.0.8": true
@@ -40,6 +43,8 @@ allowBuilds:
   "@nestjs/core@11.1.9": false
 
 verifyDepsBeforeRun: install
+# drops the exact @block65 pins below once the lockfile no longer resolves them
+minimumReleaseAgeExcludePrune: true
 minimumReleaseAgeExclude:
   - "@napi-rs/*"
   - "@oxc-parser/*"
@@ -49,15 +54,16 @@ minimumReleaseAgeExclude:
   - "@oxlint/*"
   - "@rolldown/*"
   - "@tsdown/*"
-  - "@vitejs/devtools"
   - "@vitest/*"
   - "@voidzero-dev/*"
   - oxc-parser
   - oxfmt
   - oxlint
-  - oxlint-tsgolint
   - rolldown
   - tsdown
   - vite
   - vite-plus
   - vitest
+  - "@block65/oxlint-tsgolint-linux-arm64@7.0.200303"
+  - "@block65/oxlint-tsgolint-linux-x64@7.0.200303"
+  - "@block65/oxlint-tsgolint@7.0.200303"
