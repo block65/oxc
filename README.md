@@ -45,6 +45,10 @@ pnpm --filter oxlint-app generate-config-types
 Files the fork deletes (`AGENTS.md`, `CLAUDE.md`, upstream CI) that upstream
 has since edited are resolved with `git rm`.
 
+`pnpm-lock.yaml` conflicts on its `oxlint-tsgolint` entries whenever upstream
+moves that dependency, because `pnpm-workspace.yaml` overrides it to the
+block65 build. Take upstream's copy and run `pnpm install --lockfile-only`.
+
 ## Releasing
 
 A release is the stack replayed onto the upstream release tag, plus one commit
@@ -63,4 +67,8 @@ The version is upstream's patch times 100 plus a build number, described in
 as for build 00 of a `.0` release. Tag the last commit `v[version]` and publish
 a GitHub release against the tag, which runs `deploy.yml`. Release tags are not
 on `main`'s history, and `main` is not rewritten for a release. When the build
-raises the `oxlint-tsgolint` floor in `package.json`, publish tsgolint first.
+raises the `oxlint-tsgolint` floor in `package.json`, publish and approve
+tsgolint first, then move the `oxlint-tsgolint` override in
+`pnpm-workspace.yaml` to the same floor and run `pnpm install --lockfile-only`,
+since the fork's own install resolves the peer and the registry's upstream
+package never reaches a block65 build number.
