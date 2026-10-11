@@ -1,6 +1,6 @@
 {
   "name": "@block65/oxlint",
-  "version": "1.87.2",
+  "version": "1.87.3",
   "description": "Block65 build of oxlint with additional type-aware rules routed to @block65/oxlint-tsgolint.",
   "keywords": [
     "eslint",
