@@ -1,5 +1,6 @@
-# CI in this fork is intentionally reduced to this release workflow: it builds
-# the oxlint node bindings and publishes the @block65/oxlint packages. Only
+# CI in this fork is intentionally reduced to this release workflow and the
+# lockfile check in lockfile.yml. This one builds the oxlint node bindings and
+# publishes the @block65/oxlint packages. Only
 # manual dispatch or a published release can run it, every action is pinned
 # to a commit, and the version is the one committed in npm/oxlint/package.json.
 name: Release

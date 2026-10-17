@@ -1,0 +1,30 @@
+# deploy.yml installs with `--frozen-lockfile`, so a package.json change that
+# reaches main without its pnpm-lock.yaml update only failed once a release
+# was tagged. This runs the same check on every pull request and push to main.
+name: Lockfile
+
+permissions: {}
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lockfile:
+    name: Check pnpm-lock.yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+
+      # --lockfile-only compares the lockfile with every workspace package.json
+      # without downloading the packages
+      - run: pnpm install --frozen-lockfile --lockfile-only
