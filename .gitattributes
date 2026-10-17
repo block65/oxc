@@ -16,3 +16,7 @@ apps/oxlint/test/fixtures/** text=auto eol=lf
 crates/oxc_linter/src/generated/rules_enum.rs linguist-generated=true merge=ours
 crates/oxc_linter/src/generated/rule_runner_impls.rs linguist-generated=true merge=ours
 crates/oxc_linter/src/generated/assert_layouts.rs linguist-generated=true
+
+# never merge a lockfile
+pnpm-lock.yaml -merge
+Cargo.lock -merge
