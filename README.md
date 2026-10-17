@@ -18,10 +18,12 @@ changed `no-inferrable-types`. `crates/oxc_linter/src/rules/unicorn/` holds
 autofixes are narrowed. `npm/oxlint/README.md` describes all of them. The added rules are stubs, implemented in
 [block65/tsgolint](https://github.com/block65/tsgolint).
 
-`.github/workflows/deploy.yml` is the only workflow. It builds the Linux
+`.github/workflows/deploy.yml` is the release workflow. It builds the Linux
 bindings and runs `pnpm stage publish`, which uploads for review rather than
 going live. A maintainer logged in to npm with 2FA completes the publish with
-`pnpm stage approve`.
+`pnpm stage approve`. `.github/workflows/lockfile.yml` runs on pull requests
+and pushes to `main`, and fails when `pnpm-lock.yaml` is out of date with a
+`package.json`, which would otherwise fail the release.
 
 ## Syncing with upstream
 
@@ -72,3 +74,11 @@ tsgolint first, then move the `oxlint-tsgolint` override in
 `pnpm-workspace.yaml` to the same floor and run `pnpm install --lockfile-only`,
 since the fork's own install resolves the peer and the registry's upstream
 package never reaches a block65 build number.
+
+Before pushing the tag, check the lockfile on the release commit. The replayed
+stack can leave it behind upstream's `package.json` files, and `deploy.yml`
+installs with `--frozen-lockfile`:
+
+```sh
+pnpm install --frozen-lockfile --lockfile-only
+```
