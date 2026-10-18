@@ -14,8 +14,9 @@ cut from tags, described below.
 
 `crates/oxc_linter/src/rules/typescript/` holds the five added rules and the
 changed `no-inferrable-types`. `crates/oxc_linter/src/rules/unicorn/` holds
-`prefer-single-call`, `no-typeof-undefined` and `no-useless-undefined`, whose
-autofixes are narrowed. `npm/oxlint/README.md` describes all of them. The added rules are stubs, implemented in
+`prefer-single-call`, `no-typeof-undefined`, `no-useless-undefined`,
+`prefer-dom-node-append` and `prefer-query-selector`, whose autofixes are
+narrowed, and `catch-error-name`, whose fix keeps shorthand keys. `npm/oxlint/README.md` describes all of them. The added rules are stubs, implemented in
 [block65/tsgolint](https://github.com/block65/tsgolint).
 
 `.github/workflows/deploy.yml` is the release workflow. It builds the Linux
