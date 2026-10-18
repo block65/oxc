@@ -53,9 +53,10 @@ In this build the rule stops reporting that case for `number`, `string`,
 annotation matches what inference already gives, and `let`, `var`, parameters
 and properties, which widen on their own.
 
-Three `unicorn/` rules report what they did upstream, but `--fix` applies
+Five `unicorn/` rules report what they did upstream, but `--fix` applies
 fewer of their rewrites. Where a rewrite can change behaviour or types, it is
-offered as a suggestion instead, which `--fix-suggestions` applies:
+offered as a suggestion instead, which `--fix-suggestions` applies, or not
+offered at all:
 
 - `prefer-single-call` merges `push()` and `unshift()` calls only on a
   variable known to be an array: annotated `T[]` or `Array<T>`, or
@@ -69,6 +70,16 @@ offered as a suggestion instead, which `--fix-suggestions` applies:
   type from `undefined` to `void`; a parameter's `= undefined` default, which
   makes the parameter required; and trailing `undefined` arguments, which can
   leave a call short of a required parameter.
+- `prefer-dom-node-append` rewrites `appendChild()` only where its result is
+  discarded, since `append()` returns `undefined`.
+- `prefer-query-selector` rewrites only a literal argument that means the same
+  as a selector: an id, class or tag name of ASCII letters, digits, `_` and
+  `-` that does not start with a digit, or a name without quotes. An id held in
+  a variable would need `CSS.escape()`, and `"address.line1"` as a selector
+  matches a class.
+
+`unicorn/catch-error-name` keeps the key of a shorthand property it renames:
+`{ cause }` becomes `{ cause: err }`, not `{ err }`.
 
 Four `unicorn/` rules report less than they do upstream:
 
