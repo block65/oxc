@@ -14,6 +14,17 @@ fn prefer_dom_node_append_diagnostic(span: Span) -> OxcDiagnostic {
 #[derive(Debug, Default, Clone)]
 pub struct PreferDomNodeAppend;
 
+// `append()` returns `undefined`, so only a call whose result is discarded can be rewritten
+fn is_value_not_usable(node: &AstNode, ctx: &LintContext) -> bool {
+    let parent_node = ctx.nodes().parent_node(node.id());
+    let grandparent_node = ctx.nodes().parent_node(parent_node.id());
+    matches!(
+        (parent_node.kind(), grandparent_node.kind()),
+        (AstKind::ExpressionStatement(_), _)
+            | (AstKind::ChainExpression(_), AstKind::ExpressionStatement(_))
+    )
+}
+
 declare_oxc_lint!(
     /// ### What it does
     ///
@@ -37,7 +48,7 @@ declare_oxc_lint!(
     PreferDomNodeAppend,
     unicorn,
     pedantic,
-    fix,
+    conditional_fix,
     version = "0.0.18",
     short_description = "Enforces the use of, for example, `document.body.append(div);` over `document.body.appendChild(div);` for DOM nodes.",
 );
@@ -71,6 +82,11 @@ impl Rule for PreferDomNodeAppend {
         }
 
         if call_expr.arguments[0].is_spread() {
+            return;
+        }
+
+        if !is_value_not_usable(node, ctx) {
+            ctx.diagnostic(prefer_dom_node_append_diagnostic(span));
             return;
         }
 
@@ -120,16 +136,19 @@ fn test() {
     ];
 
     let fix = vec![
+        ("node.appendChild(child);", "node.append(child);"),
         (
             "node.appendChild(child).appendChild(grandchild);",
-            "node.append(child).append(grandchild);",
+            "node.appendChild(child).append(grandchild);",
         ),
         ("node?.appendChild(child);", "node?.append(child);"),
         (
             "function foo() { return node.appendChild(child); }",
-            "function foo() { return node.append(child); }",
+            "function foo() { return node.appendChild(child); }",
         ),
-        ("const foo = [node.appendChild(child)]", "const foo = [node.append(child)]"),
+        ("const foo = [node.appendChild(child)]", "const foo = [node.appendChild(child)]"),
+        ("const foo = node.appendChild(child);", "const foo = node.appendChild(child);"),
+        ("() => node?.appendChild(child)", "() => node?.appendChild(child)"),
     ];
 
     Tester::new(PreferDomNodeAppend::NAME, PreferDomNodeAppend::PLUGIN, pass, fail)
