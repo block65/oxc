@@ -227,7 +227,20 @@ impl CatchErrorName {
                         let node = ctx.nodes().get_node(reference.node_id()).kind();
                         let Some(id) = node.as_identifier_reference() else { continue };
 
-                        declaration_fix.push(fixer.replace(id.span, fixed_name.clone()));
+                        // A shorthand property names its key after the binding, so
+                        // `{ cause }` keeps its key as `{ cause: error }`
+                        let is_shorthand = match ctx.nodes().parent_kind(reference.node_id()) {
+                            AstKind::ObjectProperty(prop) => prop.shorthand,
+                            AstKind::AssignmentTargetPropertyIdentifier(_) => true,
+                            _ => false,
+                        };
+                        let replacement = if is_shorthand {
+                            format!("{}: {fixed_name}", id.name)
+                        } else {
+                            fixed_name.to_string()
+                        };
+
+                        declaration_fix.push(fixer.replace(id.span, replacement));
                     }
 
                     declaration_fix
@@ -761,6 +774,21 @@ fn test() {
         (
             "promise.then(undefined, function (_err) {})",
             "promise.then(undefined, function (error) {})",
+            None,
+        ),
+        (
+            r#"try { } catch (cause) { throw new Error("x", { cause }) }"#,
+            r#"try { } catch (error) { throw new Error("x", { cause: error }) }"#,
+            None,
+        ),
+        (
+            "try { } catch (cause) { log({ cause, cause2: cause }) }",
+            "try { } catch (error) { log({ cause: error, cause2: error }) }",
+            None,
+        ),
+        (
+            "try { } catch (e) { ({ e } = other); ({ e = 1 } = other) }",
+            "try { } catch (error) { ({ e: error } = other); ({ e: error = 1 } = other) }",
             None,
         ),
     ];
