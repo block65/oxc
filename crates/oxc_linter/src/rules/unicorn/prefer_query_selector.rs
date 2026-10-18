@@ -131,17 +131,11 @@ impl Rule for PreferQuerySelector {
             let diagnostic =
                 prefer_query_selector_diagnostic(preferred_selector, property_name, property_span);
 
-            if argument_expr.is_null() {
-                return ctx.diagnostic_with_fix(diagnostic, |fixer| {
-                    fixer.replace(property_span, preferred_selector)
-                });
-            }
-
             let literal_value = match argument_expr {
-                Expression::StringLiteral(literal) => Some(literal.value.trim()),
+                Expression::StringLiteral(literal) => Some(literal.value.as_str()),
                 Expression::TemplateLiteral(literal) => {
                     if literal.expressions.is_empty() {
-                        literal.quasis.first().unwrap().value.cooked.as_deref().map(str::trim)
+                        literal.quasis.first().unwrap().value.cooked.as_deref()
                     } else {
                         None
                     }
@@ -149,55 +143,72 @@ impl Rule for PreferQuerySelector {
                 _ => None,
             };
 
-            if let Some(literal_value) = literal_value {
-                return ctx.diagnostic_with_fix(diagnostic, |fixer| {
-                    if literal_value.is_empty() {
-                        return fixer.replace(property_span, preferred_selector);
-                    }
+            // A dynamic argument would need `CSS.escape()`, and a literal that is not a plain
+            // identifier would change meaning as a selector, so neither is rewritten
+            let argument = literal_value.and_then(|value| selector_for(property_name, value));
+            let Some(argument) = argument else {
+                return ctx.diagnostic(diagnostic);
+            };
 
-                    let source_text = fixer.source_range(argument_expr.span());
-                    let quotes_symbol = source_text.chars().next().unwrap();
-                    let argument = match property_name {
-                        "getElementById" => format!("#{literal_value}"),
-                        "getElementsByClassName" => {
-                            // `getElementsByClassName` matches elements having ALL the listed
-                            // classes, so multiple classes become a compound selector
-                            // (`.foo.bar`), not a descendant selector (`.foo .bar`).
-                            format!(
-                                ".{}",
-                                literal_value.split_whitespace().collect::<Vec<_>>().join(".")
-                            )
-                        }
-                        "getElementsByName" => {
-                            let inner_quote = if quotes_symbol == '\'' { '"' } else { '\'' };
-                            format!("[name={inner_quote}{literal_value}{inner_quote}]")
-                        }
-                        _ => literal_value.to_string(),
-                    };
-                    let span = property_span.merge(argument_expr.span());
-                    fixer.replace(
-                        span,
-                        format!("{preferred_selector}({quotes_symbol}{argument}{quotes_symbol}"),
-                    )
-                });
-            }
-
-            // For non-literal arguments, we can still auto-fix `getElementById(id)` -> `querySelector(`#${id}`)
-            // Only apply this fix for simple identifiers so we avoid nested template literals
-            // and complex expressions like member/call expressions or template literals
-            if property_name == "getElementById"
-                && matches!(argument_expr, Expression::Identifier(_))
-            {
-                return ctx.diagnostic_with_fix(diagnostic, |fixer| {
-                    let source_text = fixer.source_range(argument_expr.span());
-                    let span = property_span.merge(argument_expr.span());
-                    fixer.replace(span, format!("{preferred_selector}(`#${{{source_text}}}`"))
-                });
-            }
-
-            ctx.diagnostic(diagnostic);
+            ctx.diagnostic_with_fix(diagnostic, |fixer| {
+                let source_text = fixer.source_range(argument_expr.span());
+                let quotes_symbol = source_text.chars().next().unwrap();
+                let argument = if property_name == "getElementsByName" {
+                    let inner_quote = if quotes_symbol == '\'' { '"' } else { '\'' };
+                    format!("[name={inner_quote}{argument}{inner_quote}]")
+                } else {
+                    argument
+                };
+                let span = property_span.merge(argument_expr.span());
+                fixer.replace(
+                    span,
+                    format!("{preferred_selector}({quotes_symbol}{argument}{quotes_symbol}"),
+                )
+            });
         }
     }
+}
+
+/// The selector equivalent to `value` passed to `method`, or `None` when no selector
+/// matches the same elements without escaping
+fn selector_for(method: &str, value: &str) -> Option<String> {
+    match method {
+        "getElementById" => is_css_identifier(value).then(|| format!("#{value}")),
+        "getElementsByClassName" => {
+            // `getElementsByClassName` matches elements having ALL the listed
+            // classes, so multiple classes become a compound selector
+            // (`.foo.bar`), not a descendant selector (`.foo .bar`).
+            let classes = value.split_whitespace().collect::<Vec<_>>();
+            (!classes.is_empty() && classes.iter().all(|class| is_css_identifier(class)))
+                .then(|| format!(".{}", classes.join(".")))
+        }
+        "getElementsByTagName" => {
+            (value == "*" || is_css_identifier(value)).then(|| value.to_string())
+        }
+        "getElementsByName" => (!value.is_empty()
+            && !value.contains(['"', '\'', '\\', '\n', '\r', '`', '$']))
+        .then(|| value.to_string()),
+        _ => None,
+    }
+}
+
+/// Whether `value` reads as itself in a selector: ASCII letters, digits, `_` and `-`,
+/// not starting with a digit or with `-` and a digit
+fn is_css_identifier(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let start = match bytes {
+        [b'-', b'-', ..] => 2,
+        [b'-', rest @ ..] => {
+            if rest.first().is_none_or(u8::is_ascii_digit) {
+                return false;
+            }
+            1
+        }
+        [first, ..] if first.is_ascii_digit() => return false,
+        [] => return false,
+        _ => 0,
+    };
+    bytes[start..].iter().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
 }
 
 fn is_non_literal_argument(expr: &Expression) -> bool {
@@ -375,19 +386,37 @@ fn test() {
     let fix = vec![
         ("document.getElementsByTagName('foo');", "document.querySelectorAll('foo');"),
         ("document.getElementsByClassName(`foo bar`);", "document.querySelectorAll(`.foo.bar`);"),
-        ("document.getElementsByClassName(null);", "document.querySelectorAll(null);"),
-        ("document.getElementsByTagName(`   `);", "document.querySelectorAll(`   `);"),
+        ("document.getElementsByClassName(null);", "document.getElementsByClassName(null);"),
+        ("document.getElementsByTagName(`   `);", "document.getElementsByTagName(`   `);"),
+        ("document.getElementsByTagName('*');", "document.querySelectorAll('*');"),
         ("document.getElementById(123);", "document.getElementById(123);"),
         ("document.getElementById(`id`);", "document.querySelector(`#id`);"),
         ("document.getElementById(obj.id);", "document.getElementById(obj.id);"),
         ("document.getElementById(getId());", "document.getElementById(getId());"),
         ("document.getElementById(`${foo}`);", "document.getElementById(`${foo}`);"),
-        ("document.getElementById(searchInputId);", "document.querySelector(`#${searchInputId}`);"),
+        ("document.getElementById(searchInputId);", "document.getElementById(searchInputId);"),
+        (
+            r#"document.getElementById("address.line1");"#,
+            r#"document.getElementById("address.line1");"#,
+        ),
+        (r#"document.getElementById("1st");"#, r#"document.getElementById("1st");"#),
+        (r#"document.getElementById("-1st");"#, r#"document.getElementById("-1st");"#),
+        (r#"document.getElementById(" foo ");"#, r#"document.getElementById(" foo ");"#),
+        (r#"document.getElementById("");"#, r#"document.getElementById("");"#),
+        (
+            r#"document.getElementById("-foo_bar-2");"#,
+            r##"document.querySelector("#-foo_bar-2");"##,
+        ),
+        (
+            r#"document.getElementsByClassName("foo sm:bar");"#,
+            r#"document.getElementsByClassName("foo sm:bar");"#,
+        ),
         (r#"document.getElementsByName("foo");"#, r#"document.querySelectorAll("[name='foo']");"#),
         ("document.getElementsByName('foo');", r#"document.querySelectorAll('[name="foo"]');"#),
         ("document.getElementsByName(`foo`);", "document.querySelectorAll(`[name='foo']`);"),
-        ("document.getElementsByName(null);", "document.querySelectorAll(null);"),
-        (r#"document.getElementsByName("");"#, r#"document.querySelectorAll("");"#),
+        ("document.getElementsByName(null);", "document.getElementsByName(null);"),
+        (r#"document.getElementsByName("");"#, r#"document.getElementsByName("");"#),
+        (r#"document.getElementsByName("it's");"#, r#"document.getElementsByName("it's");"#),
         (
             r#"document.getElementsByName("multiple name should be fixable");"#,
             r#"document.querySelectorAll("[name='multiple name should be fixable']");"#,
