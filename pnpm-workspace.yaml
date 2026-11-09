@@ -32,7 +32,7 @@ overrides:
   emnapi: "catalog:"
   # the fork's own install resolves @block65/oxlint's peer floor, which the
   # upstream oxlint-tsgolint package never reaches
-  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.200303
+  oxlint-tsgolint: npm:@block65/oxlint-tsgolint@>=7.0.200600
 
 allowBuilds:
   "@vscode/vsce-sign@2.0.8": true
@@ -62,6 +62,6 @@ minimumReleaseAgeExclude:
   - vite
   - vite-plus
   - vitest
-  - "@block65/oxlint-tsgolint-linux-arm64@7.0.200303"
-  - "@block65/oxlint-tsgolint-linux-x64@7.0.200303"
-  - "@block65/oxlint-tsgolint@7.0.200303"
+  - "@block65/oxlint-tsgolint-linux-arm64@7.0.200600"
+  - "@block65/oxlint-tsgolint-linux-x64@7.0.200600"
+  - "@block65/oxlint-tsgolint@7.0.200600"
